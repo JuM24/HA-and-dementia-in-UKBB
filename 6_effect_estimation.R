@@ -1,13 +1,61 @@
 # This code matches the two exposure groups, performs some checks about the quality of the matching, and estimates the effects.
+# The default parameters below are for the main analysis; for sensitivity analyses,
+# the following should be altered (see Suppl. material for which number refers
+# to which analysis):
+
+## analysis 2:
+  # - addition of covariates `soc_isol_USE`, `mood_dis` to matching and effect estimation
+
+## analysis 3:
+  # - before matching, removal of participants with `early_cens == 1`
+
+## analysis 4:
+  # - re-run `4_clean_data.R` with `find_closest_non_missing_before_0` in all cases
+  #   where `find_closest_non_missing` is used; that new `hearing_masterfile_ITT/PP` 
+  #   is then used in this script instead of the default one
+
+## analysis 5:
+  # - addition of covariate `hear_loss_origin_simple` to matching and effect estimation
+
+## analysis 6:
+  # - addition of covariate `inpatient_contact_cat` to matching and effect estimation
+
+## analysis 7:
+  # - addition of covariates `inpatient_contact_cat`, `presc_contact`, `diag_contact` 
+  #   to matching and effect estimation
+
+## analysis 8
+  # - replace the variable `dementia` with `flu`
+
+## analysis 9
+  # - replace the variable `dementia` with `hepatic`
+
+## analysis 10
+  # - replace the variable `dementia` with `heart`
+
+## analysis 11
+  # - replace the variable `dementia` with `respiratory`
+
+## analysis 12
+  # - replace the variable `dementia` with `asthma`
+
+## analysis 13
+  # - replace the variable `dementia` with `skin`
+
+## analysis 14
+  # - replace the variable `dementia` with `infect`
+
 
 library(tidyverse)
 library(MatchIt)
 library(survey)
 
 source('0_helper_functions.R')
-setwd('files/')
 
-hear <- readRDS('hearing_masterfile_ITT.rds')
+# set file name
+file_name <- ''
+
+hear <- readRDS(file_name)
 
 set.seed(6)
 m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +

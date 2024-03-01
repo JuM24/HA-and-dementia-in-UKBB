@@ -1,6 +1,14 @@
-# This code cleans the data before analysis.
+# choose alternative outcome name (default is 'dementia'); can be any among
+# c('hepatic', 'heart', 'respiratory', 'asthma', 'skin', 'infect')
+outcome <- ''
 
-# hearing aid emulation
+# convert the strings to symbols (the '!!' is then later used within `dplyr` to unquote the symbol)
+outcome_date <- paste0(outcome, '_date')
+outcome_sym <- rlang::sym(outcome)
+outcome_date_sym <- rlang::sym(outcome_date)
+
+
+
 library(tidyverse)
 library(MatchIt)
 
@@ -22,11 +30,12 @@ hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) 
 hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & hear$hear_aid_any == 1 & hear$cochl_impl_any == 1) |
                          (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)] <- 
   hear$date_cochl_impl_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & hear$hear_aid_any == 1 & hear$cochl_impl_any == 1) |
-                           (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
+                             (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
 
 
-# Remove those with dementia before or at the same date as hearing loss.
-hear <- filter(hear, dementia == 0 | (date_hear_loss_any < dementia_date))
+# Remove those with outcome before or at the same date as hearing loss.
+#hear <- filter(hear, !!outcome_sym == 0 | (date_hear_loss_any < !!outcome_date_sym) | (!is.na(date_hear_aid_any) & date_hear_aid_any < !!outcome_date_sym))
+hear <- filter(hear, !!outcome_sym == 0 | (date_hear_loss_any < !!outcome_date_sym))
 
 # Remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline.
 no_aid_date <- filter(hear, hear_aid_any == 0 & hear_aid_nodate == 1)
@@ -35,7 +44,6 @@ hear <- filter(hear, !id %in% no_aid_date$id) %>%
 
 # Select only those that were diagnosed with HL before getting HA
 hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_any))
-
 
 # determine the assessment that is closest to HL start and which will be used for covariate measurement 
 hear <- find_closest_non_missing(hear, 'education', date_hear_loss_any = 'date_hear_loss_any')
@@ -50,20 +58,20 @@ hear$data_provider_last <- as.factor(hear$data_provider_last)
 hear$data_provider_freq[is.na(hear$data_provider_freq)] <- '0'
 hear$data_provider_freq <- as.factor(hear$data_provider_freq)
 
-# set the correct data censoring date based on data provider
+# set the censoring dates to the date of dementia/death, whichever occurs earlier.
 hear$data_cens_date <- NA
-hear$data_cens_date[hear$data_provider_last == 'HES'] <- cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'HES']
-hear$data_cens_date[hear$data_provider_last == 'SMR'] <- cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'SMR']
-hear$data_cens_date[hear$data_provider_last == 'PEDW'] <- cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'PEDW']
-hear$data_cens_date[hear$data_provider_last == '0'] <- min(cens_dates$date[cens_dates$disorder == 'dementia'])
+hear$data_cens_date[hear$data_provider_last == 'HES'] <- cens_dates$date[cens_dates$disorder == outcome & cens_dates$data_provider == 'HES']
+hear$data_cens_date[hear$data_provider_last == 'SMR'] <- cens_dates$date[cens_dates$disorder == outcome & cens_dates$data_provider == 'SMR']
+hear$data_cens_date[hear$data_provider_last == 'PEDW'] <- cens_dates$date[cens_dates$disorder == outcome & cens_dates$data_provider == 'PEDW']
+hear$data_cens_date[hear$data_provider_last == '0'] <- min(cens_dates$date[cens_dates$disorder == outcome])
 hear$data_cens_date <- zoo::as.Date(hear$data_cens_date)
 
 # set the censoring dates to the date that occurs earlier.
 hear <- hear %>%
-  mutate(censor_date = reduce(across(c('dementia_date', 'death_date', 'data_cens_date')), pmin, na.rm = TRUE))
+  mutate(censor_date = pmin(!!outcome_date_sym, death_date, data_cens_date, na.rm = TRUE))
 
 # for those that are labelled as having experienced the outcome after the censoring date, set the outcome to 0
-hear$dementia[hear$censor_date < hear$dementia_date] <- 0
+hear[[outcome_sym]][hear$censor_date < hear[[outcome_date_sym]]] <- 0
 hear$death[hear$censor_date < hear$death_date] <- 0
 
 # Some will have experienced HL only after the censoring date; remove those.
@@ -72,10 +80,6 @@ hear <- filter(hear, date_hear_loss_any < censor_date)
 # age at HL
 hear$age_USE <- as.numeric(difftime(hear$date_hear_loss_any, hear$birth_date, units = 'days'))/365.25
 
-# for mood disorders, remove dates after starting date (it's a confounder and must occur before to affect outcome and exposure)
-hear$mood_dis[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- 0
-hear$mood_dis_date[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- NA
-
 # define the 'grace period'. This is the period from HL in which start of use of HA will still lead to the classification as 'exposed'
 hear$hear_loss_time <- as.numeric(difftime(hear$date_hear_aid_any, hear$date_hear_loss_any, units='days'))/365.25
 hear$grace_period[hear$hear_loss_time <= 1 | hear$hear_aid_any == 0] <- 1
@@ -83,11 +87,11 @@ hear$grace_period[hear$hear_loss_time > 1] <- 0
 # for those with HA beyond the grace period, set HA status to 0
 hear$hear_aid_any[hear$grace_period == 0] <- 0
 
+# just keep non-missing rows (hear_loss_time_USE, gp_time only for sensitivity analyses)
 # just keep non-missing rows and individuals with assessment data <=5 years removed from the date of HL
-hear <- hear %>% drop_na(any_of(c('age_USE', 'sex', 'education_USE', 'deprivation', 'g_USE', 'srt_min_USE', 'data_provider_freq', 'dementia'))) %>%
-  filter(min_diff_education <= 5*365.25 & min_diff_g <= 5*365.25 & min_diff_srt_min <= 5*365.25)
-
-
+hear <- hear %>%
+  filter(if_all(c(age_USE, sex, education_USE, deprivation, g_USE, srt_min_USE, data_provider_freq, !!outcome_sym), ~ !is.na(.)) &
+           min_diff_education <= 5*365.25 & min_diff_g <= 5*365.25 & min_diff_srt_min <= 5*365.25)
 
 # To factors.
 hear <- hear %>% mutate(across(c(education_USE, sex, data_provider_freq, soc_isol_USE, mood_dis), as.factor))
@@ -290,8 +294,7 @@ hear_PP$death[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & hear_PP$death =
 hear$follow_up <- as.numeric(difftime(hear$censor_date, hear$date_hear_loss_any, units = 'days'))/365.25
 hear_PP$follow_up <- as.numeric(difftime(hear_PP$censor_date, hear_PP$date_hear_loss_any, units = 'days'))/365.25
 
-# export
-saveRDS(hear, file = 'hearing_masterfile_ITT.rds')
-saveRDS(hear_PP, file = 'hearing_masterfile_PP.rds')
+saveRDS(hear, file = paste0('hearing_masterfile_', outcome, '_ITT.rds'))
+saveRDS(hear_PP, file = paste0('hearing_masterfile_', outcome, '_PP.rds'))
 
 rm(list = ls())

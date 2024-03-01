@@ -32,17 +32,25 @@ main_vars <- ukb %>%
       # cognitive tests
       'X20016.', 'X20018.', 'X20023.', 'X399.', 'X6351.', 'X6373.', 'X23324.', 
       'X4282.', 'X21004.',
-      # social isolation
-      'X709.', 'X1031.', 'X6160.', 'X40000.', # date of death
-                              'X130890.', 'X130892.', 'X130894.', 'X130896.', 'X130898.', 'X130900.', 'X130902.', # mood disorders
-                              'X131484.', 'X131486.', 'X131488.', 'X131490.', 'X131492.', 'X131494.', 'X131496.', # respiratory disease
-                              'X131498.', 'X131658.', 'X131660.', 'X131662.', 'X131664.', 'X131666.', 'X131668.', 'X131670.', # liver disease
-                              'X131438.', 'X131440.', 'X131442.', 'X131444.', 'X131446.', 'X131448.', 'X131450.', 'X131452.', 'X131454.', 'X131456.', # influenza
-                              'X131296.', 'X131298.', 'X131300.', 'X131302.', 'X131304.', 'X131306.', # heart disease
-                              'X42014.', # asthma
-                              FO_skin_fields, # skin disorders
-                              FO_infect_fields, # infection disorders
-                              'X40022.', 'X41270.', 'X41280.', 'X41271.', 'X41281.', # inpatient data
+      # date of death
+      'X40000.',
+      # mood disorders
+      'X130890.', 'X130892.', 'X130894.', 'X130896.', 'X130898.', 'X130900.', 'X130902.', 
+      # respiratory disease
+      'X131484.', 'X131486.', 'X131488.', 'X131490.', 'X131492.', 'X131494.', 'X131496.',
+      # liver disease
+      'X131498.', 'X131658.', 'X131660.', 'X131662.', 'X131664.', 'X131666.', 'X131668.', 'X131670.',
+      # influenza/pneumonia
+      'X131438.', 'X131440.', 'X131442.', 'X131444.', 'X131446.', 'X131448.', 'X131450.', 'X131452.', 'X131454.', 'X131456.',
+      # heart disease
+      'X131296.', 'X131298.', 'X131300.', 'X131302.', 'X131304.', 'X131306.',
+      
+      'X42014.', # asthma
+      FO_skin_fields, # skin disorders
+      FO_infect_fields, # infection disorders
+      'X40022.', 'X41270.', 'X41280.', 'X41271.', 'X41281.', # inpatient data
                               'X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 'X20021.', 'X131258.', 'X131260.', 'X131259.', 'X131261.', # hearing-related codes
                               'X4792.', 'X132460.'))))
 saveRDS(main_vars, file = '/home/s1876403/main_vars.Rds')
+
+rm(list = ls())

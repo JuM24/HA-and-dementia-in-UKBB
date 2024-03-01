@@ -60,3 +60,49 @@ find_closest_non_missing <- function(df, var_prefix, date_hear_loss_any) {
   
   return(df)
 }
+
+
+## this is a variation of the original function; here, an assessment is chosen only if it occurs before time 0
+
+# finds the closest non-missing variable measurement for the variable of interest;
+# the variable name must be of the form `var_prefix_x`, where x indicates the assessment number (0-3)
+# and `var_prefix` the name of the variable, e.g., 'education'
+find_closest_non_missing_before_0 <- function(df, var_prefix, date_hear_loss_any) {
+  # absolute date difference between date of hearing loss and assessment dates
+  for (i in 0:3) {
+    df[[paste0('date_diff_loss_', i)]] <- ifelse(
+      is.na(df[[paste0(var_prefix, '_', i)]]), 
+      Inf, # assessment dates with NAs given infinite date distance to prioritise non-NA dates
+      difftime(df[[date_hear_loss_any]], df[[paste0('date_', i)]], units = 'days')
+    )
+  }
+  
+  # determine the smallest difference between HL start and assessment dates
+  df$use_ass <- NA
+  min_diff <- do.call(pmin, c(df[paste0('date_diff_loss_', 0:3)], na.rm = TRUE)) # compute minimum of the non-missing data
+  for (i in 0:3) {
+    non_missing <- !is.na(df[[paste0(var_prefix, '_', i)]]) # identify assessments with non-missing data
+    closest <- df[[paste0('date_diff_loss_', i)]] == min_diff & non_missing # logical vector: does the current assessment have the minimum difference?
+    df$use_ass[closest & is.na(df$use_ass)] <- i # determine use_ass based on above
+  }
+  
+  # select the date that minimises the time difference between HL start and assessment date
+  for (i in 0:3) {
+    valid_indices <- !is.na(df$use_ass) & df$use_ass == i
+    df[[paste0(var_prefix, '_USE')]][valid_indices] <- df[[paste0(var_prefix, '_', i)]][valid_indices]
+  }
+  
+  # create a column indicating the duration of this minimum difference
+  df[[paste0('min_diff_', var_prefix)]] <- min_diff
+  
+  # Remove intermediate columns
+  df <- df[ , !(names(df) %in% paste0('date_diff_loss_', 0:3))]
+  
+  # remove positive values
+  df[df[[paste0('min_diff_', var_prefix)]] > 0, paste0(var_prefix, '_USE')] <- NA
+  
+  # change negative to absolute so the other parts of the code work as expected
+  df[df[[paste0('min_diff_', var_prefix)]] < 0, paste0('min_diff_', var_prefix)] <- abs(df[df[[paste0('min_diff_', var_prefix)]] < 0, paste0('min_diff_', var_prefix)])
+  
+  return(df)
+}
