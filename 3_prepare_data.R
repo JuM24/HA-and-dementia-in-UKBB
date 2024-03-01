@@ -3,7 +3,6 @@ library(tidyverse)
 library(zoo)
 
 source('0_helper_functions.R')
-setwd('files')
 
 # import the file with all the hearing loss and hearing aid UKB variables
 # field IDs 2247, 2257, 4849, 3393, 20019, 20021, 131258, 131260, 131259, 131261, 4792, 132460
@@ -326,6 +325,10 @@ hear$hear_loss_origin[hear$hear_loss_origin == '30' | hear$hear_loss_origin == '
                         hear$hear_loss_origin == 'read2' | hear$hear_loss_origin == 'read3'] <- 'GP'
 hear$hear_loss_origin[hear$hear_loss_origin == '40' | hear$hear_loss_origin == '41' |
                         hear$hear_loss_origin == 'icd9' | hear$hear_loss_origin == 'icd10'] <- 'inpatient'
+
+# simple one that doesn't distinguish between GP and hospital
+hear$hear_loss_origin_simple <- hear$hear_loss_origin
+hear$hear_loss_origin_simple[hear$hear_loss_origin %in% c('GP', 'inpatient')] <- 'EHR'
 
 
 # earliest date of hearing aid (analogous to above process for hearing loss)

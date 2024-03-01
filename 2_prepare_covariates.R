@@ -4,8 +4,8 @@ library(purrr)
 library(lavaan)
 library(semPlot)
 
+
 source('0_helper_functions.R')
-setwd('files/')
 
 
 invalid_dates <- as.Date(c('01/01/1900', '01/01/1901', '02/02/1902', '03/03/1903', '07/07/2037'), format = '%d/%m/%Y')
@@ -243,10 +243,9 @@ mood_ado$mood_dis_date[mood_ado$mood_dis_date == as.Date('1902-02-02', format = 
 
 
 ## deprivation
-# TODO: cannot find the data field
 deprivation <- data_all %>% 
-  select(c(eid, starts_with(c('X22189'))))#
-deprivation <- read.csv('D:/Job/Raw data/deprivation.csv')
+  select(c(eid, starts_with(c('X189')))) %>%
+  rename(id = eid, deprivation = X189.0.0)
 
 
 # various other disorders

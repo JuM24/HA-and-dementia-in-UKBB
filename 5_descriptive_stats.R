@@ -1,9 +1,11 @@
 library(tidyverse)
 
 source('0_helper_functions.R')
-setwd('files/')
 
-hear <- readRDS('hearing_masterfile_ITT.rds')
+# file name
+file_name <- ''
+
+hear <- readRDS(file_name)
 
 
 # plots of follow-up times
