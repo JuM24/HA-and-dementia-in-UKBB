@@ -8,8 +8,8 @@ Field ID | Description
 Year and month of birth | `34`, `52`
 Date of assessment centre visit | `53`
 Linked date of death | `40000`
-
 31 |	sex
+
 34	year of birth
 52	month of birth
 53	ass date
