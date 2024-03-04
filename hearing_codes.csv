@@ -1,0 +1,511 @@
+description,code,source,simple,congenital
+implantation of intracochlear prosthesis,73210,read2,ci,
+implantation of extracochlear prosthesis,73211,read2,ci,
+implantation of intracochlear prosthesis,73210,read3,ci,
+implantation of cochlear implant  intracochlear,73210,read3,ci,
+implantation of extracochlear prosthesis,73211,read3,ci,
+implantation of cochlear implant  extracochlear,73211,read3,ci,
+adjustment of cochlear implant processor,Xa4i2,read3,ci,
+cochlear implant,Xa9RA,read3,ci,
+referral to cochlear implant service,XaAeX,read3,ci,
+referral to adult cochlear implant service,XaAeY,read3,ci,
+referral to paediatric cochlear implant service,XaAeZ,read3,ci,
+cochlear prosthesis procedure,XaB9W,read3,ci,
+cochlear implant service,XaC67,read3,ci,
+adult cochlear implant service,XaC68,read3,ci,
+paediatric cochlear implant service,XaC69,read3,ci,
+insertion of auditory implant to brainstem,XaIOD,read3,ci,
+removal of hearing implant from external ear,73086,read2,ci,
+removal of hearing implant from middle ear,7317E,read2,ci,
+removal of cochlear prosthesis,73212,read2,ci,
+removal of cochlear prosthesis,73218,read2,ci,
+cochlear prosthesis   attention  or  removal ,73212,read3,ci,
+removal of cochlear prosthesis,73212,read3,ci,
+removal of cochlear prosthesis,X00hV,read3,ci,
+removal of cochlear implant,X00hV,read3,ci,
+removal of bone anchored hearing aid,XaBIi,read3,ci,
+removal of hearing implant from external ear,XaLNc,read3,ci,
+removal of hearing implant from middle ear,XaLNj,read3,ci,
+insertion of auditory implant to brainstem,70073,read2,ci,
+attention to cochlear prosthesis,XE0Bq,read3,ci,
+attention to cochlear implant,XE0Bq,read3,ci,
+hearing aid,V532,icd9,ha,
+adjustment and management of implanted hearing device,Z453,icd10,ha,
+fitting and adjustment of hearing aid,Z461,icd10,ha,
+presence of external hearing aid,Z974,icd10,ha,
+hearing aid problem,1C17.,read2,ha,
+hearing aid worn,2DG..,read2,ha,
+uses hearing loop,2DH0.,read2,ha,
+does use hearing aid,2DH1.,read2,ha,
+placement of hearing implant in external ear,73084,read2,ha,
+attention to hearing implant in external ear,73085,read2,ha,
+insertion of bone anchors for subcutaneous bone anchored hearing aid,7311A,read2,ha,
+placement of hearing implant in middle ear,7317C,read2,ha,
+attention to hearing implant in middle ear,7317D,read2,ha,
+attachment of bone anchored hearing prosthesis,7319,read2,ha,
+insertion of fixtures for bone anchored hearing prosthesis stage 1,73190,read2,ha,
+insertion of fixtures for bone anchored hearing prosthesis stage 2,73191,read2,ha,
+reduction of soft tissue for bone anchored hearing prosthesis,73192,read2,ha,
+attention to fixtures for bone anchored hearing prosthesis,73193,read2,ha,
+one stage insertion of fixtures for bone anchored hearing prosthesis,73194,read2,ha,
+fitting of external hearing prosthesis to bone anchored fixtures,73195,read2,ha,
+first stage insertion of fixtures for bone anchored hearing prosthesis,73196,read2,ha,
+second stage insertion of fixtures for bone anchored hearing prosthesis,73197,read2,ha,
+other specified attachment of bone anchored hearing prosthesis,7319y,read2,ha,
+attachment of bone anchored hearing prosthesis nos,7319z,read2,ha,
+auditory aid,8D2..,read2,ha,
+auditory aid provision,8D2..,read2,ha,
+hearing aid provision,8D2..,read2,ha,
+provide head worn hearing aid,8D21.,read2,ha,
+provide body worn hearing aid,8D22.,read2,ha,
+ear fitting hearing aid,8D23.,read2,ha,
+replace hearing aid battery,8D24.,read2,ha,
+physiolog  hearing assistance,8D25.,read2,ha,
+provision of replacement hearing aid,8D26.,read2,ha,
+auditory aid nos,8D2Z.,read2,ha,
+referral to hearing aid clinic,8HT2.,read2,ha,
+hearing aid requested,8M41.,read2,ha,
+seen in hearing aid clinic,9N0b.,read2,ha,
+ v presence of external hearing aid,ZV45G,read2,ha,
+ v bone anchored hearing aid in situ,ZV45N,read2,ha,
+ v fitting or adjustment of hearing aid,ZV532,read2,ha,
+ v adjustment and management of implanted hearing device,ZV53D,read2,ha,
+ auditory aid  or  provision of ,8D2..,read3,ha,
+hearing aid provision,8D2..,read3,ha,
+auditory aid provision,8D2..,read3,ha,
+auditory aid,8D2..,read3,ha,
+provide head worn hearing aid,8D21.,read3,ha,
+provide body worn hearing aid,8D22.,read3,ha,
+ear fitting hearing aid,8D23.,read3,ha,
+replace hearing aid battery,8D24.,read3,ha,
+physiological hearing assistance,8D25.,read3,ha,
+auditory aid nos,8D2Z.,read3,ha,
+refer to hearing aid clinic,8HT2.,read3,ha,
+switching on hearing aid,Ua1ra,read3,ha,
+fit hearing aid,Ua1rb,read3,ha,
+checking hearing aid,Ua1rd,read3,ha,
+changing hearing aid battery,Ua1re,read3,ha,
+hearing aid procedure,Ua1rf,read3,ha,
+turning off hearing aid,Ua1rW,read3,ha,
+listening for feedback whistle of hearing aid,Ua1rX,read3,ha,
+putting on hearing aid,Ua1rZ,read3,ha,
+insertion of bone anchors for subcutaneous bone anchored hearing aid,X00h2,read3,ha,
+baha   insertion of anchors for subcutaneous bone anchored hearing aid,X00h2,read3,ha,
+insertion of bone anchors for percutaneous bone anchored hearing aid,X00h3,read3,ha,
+baha   insertion of anchors for percutaneous bone anchored hearing aid,X00h3,read3,ha,
+real ear measurement of hearing aid gain,X77g5,read3,ha,
+rem   real ear measurement of hearing aid gain,X77g5,read3,ha,
+hearing aid,X79ms,read3,ha,
+ha   hearing aid,X79ms,read3,ha,
+hearing aid worn,Xa0LN,read3,ha,
+hearing aid provision,Xa1pl,read3,ha,
+auditory aid provision,Xa1pl,read3,ha,
+ability to use hearing aid,Xa2yU,read3,ha,
+able to use hearing aid,Xa2yV,read3,ha,
+unable to use hearing aid,Xa2yW,read3,ha,
+does use hearing aid,Xa2yX,read3,ha,
+uses hearing aid,Xa2yX,read3,ha,
+does not use hearing aid,Xa2yY,read3,ha,
+difficulty using hearing aid,Xa2yZ,read3,ha,
+attention to hearing aid,Xa4hp,read3,ha,
+fit ear mould for existing hearing aid,Xa4hs,read3,ha,
+adjust hearing aid settings,Xa8Ek,read3,ha,
+observation of hearing aid,Xa8Ks,read3,ha,
+auditory implant,Xa9XO,read3,ha,
+referral to hearing aid service,XaAea,read3,ha,
+referral to adult hearing aid service,XaAeb,read3,ha,
+referral to paediatric hearing aid service,XaAec,read3,ha,
+referral to registered hearing aid dispenser,XaAf8,read3,ha,
+bone anchored hearing aid,XaAv5,read3,ha,
+baha   bone anchored hearing aid,XaAv5,read3,ha,
+second stage bone anchored hearing aid procedure,XaAv6,read3,ha,
+hearing aid dispenser,XaBqy,read3,ha,
+hearing aid service,XaC6A,read3,ha,
+adult hearing aid service,XaC6B,read3,ha,
+paediatric hearing aid service,XaC6C,read3,ha,
+hearing aid battery,XaE8p,read3,ha,
+seen in hearing aid clinic,XaEEV,read3,ha,
+hearing aid requested,XaIkt,read3,ha,
+hearing aid problem,XaIRo,read3,ha,
+uses hearing loop,XaKjD,read3,ha,
+placement of hearing implant in external ear,XaLNa,read3,ha,
+attention to hearing implant in external ear,XaLNb,read3,ha,
+placement of hearing implant in middle ear,XaLNh,read3,ha,
+attention to hearing implant in middle ear,XaLNi,read3,ha,
+attachment of bone anchored hearing prosthesis,XaLNl,read3,ha,
+insertion of fixtures for bone anchored hearing prosthesis stage 1,XaLNm,read3,ha,
+first stage insertion of fixtures for bone anchored hearing prosthesis,XaLNm,read3,ha,
+insertion of fixtures for bone anchored hearing prosthesis stage 2,XaLNn,read3,ha,
+second stage insertion of fixtures for bone anchored hearing prosthesis,XaLNn,read3,ha,
+reduction of soft tissue for bone anchored hearing prosthesis,XaLNo,read3,ha,
+attention to fixtures for bone anchored hearing prosthesis,XaLNp,read3,ha,
+other specified attachment of bone anchored hearing prosthesis,XaLNq,read3,ha,
+attachment of bone anchored hearing prosthesis nos,XaLNr,read3,ha,
+one stage insertion of fixtures for bone anchored hearing prosthesis,XaMkv,read3,ha,
+fitting of external hearing prosthesis to bone anchored fixtures,XaMkw,read3,ha,
+ v bone anchored hearing aid in situ,XaPEU,read3,ha,
+provision of replacement hearing aid,XaZp4,read3,ha,
+auditory aid,XM0F9,read3,ha,
+insertion of cochlear implant,XSAYE,read3,ci,
+ v presence of external hearing aid,ZV45G,read3,ha,
+ v fitting or adjustment of hearing aid,ZV532,read3,ha,
+ v adjustment and management of implanted hearing device,ZV53D,read3,ha,
+ mutism  or  deaf mutism nos ,XE1AN,read3,hl,0
+ nerve injury   auditory cranial  or  eighth  or  acoustic  8th    or  traumatic deafness nos ,SJ15.,read3,hl,0
+ other and unspecified ear anomaly with hearing impaired  or  deafness due to congenital anomaly nec ,P40z.,read3,hl,1
+ v problems with hearing,ZV412,read2,hl,0
+ v problems with hearing,ZV412,read3,hl,0
+ x  dissociative anaesthesia and sensory loss     psychogenic deafness  ,Eu446,read3,hl,0
+ x deaf mutism  not elsewhere classified,FyuU0,read2,hl,0
+ x deaf mutism  not elsewhere classified,FyuU0,read3,hl,0
+ x malformation of ear with impairment of hearing  unspecified,Pyu1B,read2,hl,0
+ x malformation of ear with impairment of hearing  unspecified,Pyu1B,read3,hl,0
+ x other specified hearing loss,FyuU1,read2,hl,0
+ x other specified hearing loss,FyuU1,read3,hl,0
+absence of external ear nos    hearing impairment ,P40z0,read3,hl,0
+age related hearing loss,F5801,read3,hl,0
+alopecia  onychodysplasia  hypohidrosis  deafness ectodermal dysplasia,X50HE,read3,hl,0
+amyloid nephropathy with deafness and urticaria,C3734,read2,hl,0
+amyloid nephropathy with deafness and urticaria,C3734,read3,hl,0
+anomalies of ear causing impairment of hearing,7440,icd9,hl,0
+articulatory defect due to conductive hearing loss,E2F32,read2,hl,0
+articulatory defect due to conductive hearing loss,Xabxq,read3,hl,0
+articulatory impairment due to conductive hearing loss,E2F32,read2,hl,0
+articulatory impairment due to conductive hearing loss,Xabxq,read3,hl,0
+bilateral congenital sensorineural hearing loss,F591A,read2,hl,1
+bilateral congenital sensorineural hearing loss,XaaLg,read3,hl,1
+bilateral deafness,1C133,read2,hl,0
+bilateral deafness,1C133,read3,hl,0
+bilateral profound sensorineural hearing loss,F5919,read2,hl,0
+bilateral profound sensorineural hearing loss,XaaLf,read3,hl,0
+cd   conductive deafness,F590.,read3,hl,0
+central hearing loss,F5913,read2,hl,0
+central hearing loss,F5913,read3,hl,0
+chl   conductive hearing loss,F590.,read3,hl,0
+chronic deafness,F59z.,read2,hl,0
+chronic deafness,F59z.,read3,hl,0
+chronic deafness,X00kO,read3,hl,0
+cochlear hearing loss,F5911,read3,hl,0
+combined conductive hearing loss,F590y,read2,hl,0
+combined conductive hearing loss,F590y,read3,hl,0
+combined perceptive hearing loss,F591y,read2,hl,0
+combined perceptive hearing loss,F591y,read3,hl,0
+combined visual and hearing impairment,Fy1..,read2,hl,0
+combined visual and hearing impairment,XaYPJ,read3,hl,0
+conductive and sensorineural hearing loss,H90,icd10,hl,0
+conductive deafness,3890,icd9,hl,0
+conductive deafness,F590.,read2,hl,0
+conductive deafness,F590.,read3,hl,0
+conductive hearing loss,F590.,read2,hl,0
+conductive hearing loss,F590.,read3,hl,0
+conductive hearing loss  bilateral,H900,icd10,hl,0
+conductive hearing loss  bilateral,F5905,read2,hl,0
+conductive hearing loss  bilateral,F5905,read3,hl,0
+conductive hearing loss  unilateral with unrestricted hearing on the contralateral side,H901,icd10,hl,0
+conductive hearing loss  unilateral with unrestricted hearing on the contralateral side,F5906,read2,hl,0
+conductive hearing loss  unilateral with unrestricted hearing on the contralateral side,F5906,read3,hl,0
+conductive hearing loss  unspecified,H902,icd10,hl,0
+conductive hearing loss due to disorder of external ear,F5901,read2,hl,0
+conductive hearing loss due to disorder of external ear,F5901,read3,hl,0
+conductive hearing loss due to disorder of inner ear,F5904,read2,hl,0
+conductive hearing loss due to disorder of inner ear,F5904,read3,hl,0
+conductive hearing loss due to disorder of middle ear,F5903,read2,hl,0
+conductive hearing loss due to disorder of middle ear,F5903,read3,hl,0
+conductive hearing loss due to disorder of tympanic membrane,F5902,read2,hl,0
+conductive hearing loss due to disorder of tympanic membrane,F5902,read3,hl,0
+conductive hearing loss nos,F590z,read2,hl,0
+conductive hearing loss nos,F590z,read3,hl,0
+congenital malformation of ear causing impairment of hearing  unspecified,Q169,icd10,hl,1
+congenital malformations of ear causing impairment of hearing,Q16,icd10,hl,1
+congenital prelingual deafness,F5918,read2,hl,1
+congenital prelingual deafness,XaRE1,read3,hl,1
+congenital sensorineural deafness,F5914,read2,hl,1
+congenital sensorineural deafness,F5914,read3,hl,1
+dead ear,X75qM,read3,hl,0
+dead ear   postoperative,Xa0PN,read3,hl,0
+deaf blind telephone user,Ua0R8,read3,hl,0
+deaf mutism  nec,F593.,read2,hl,0
+deaf mutism  nec,F593.,read3,hl,0
+deaf mutism  not elsewhere classifiable,3897,icd9,hl,0
+deaf mutism  not elsewhere classified,H913,icd10,hl,0
+deaf mutism nos,XE1AN,read3,hl,0
+deafblind,Fy1..,read2,hl,0
+deafblind,XaYPJ,read3,hl,0
+deafened,F59A.,read2,hl,0
+deafened,XaRE5,read3,hl,0
+deafness,389,icd9,hl,0
+deafness,1C13.,read2,hl,0
+deafness,F59..,read2,hl,0
+deafness,1C13.,read3,hl,0
+deafness,F59..,read3,hl,0
+deafness,XE0s9,read3,hl,0
+deafness    symptom ,1C13.,read3,hl,0
+deafness   chronic  or  nos ,F59z.,read3,hl,0
+deafness   sensorineural  or  nerve  or  perceptive   diagnos ,XE1AL,read3,hl,0
+deafness   traumatic   nos,SJ15.,read2,hl,0
+deafness   traumatic   nos,SJ15.,read3,hl,0
+deafness due to congenital anomaly nec,P40z.,read2,hl,1
+deafness due to congenital anomaly nec,P40z.,read3,hl,1
+deafness due to congenital anomaly nec,X77tB,read3,hl,1
+deafness earpits syndrome,X00ke,read3,hl,0
+deafness nos,F59z.,read2,hl,0
+deafness nos,F59z.,read3,hl,0
+deafness nos,XE17P,read3,hl,0
+deafness or hearing loss,V192,icd9,hl,0
+deafness remedial therapy,8E3..,read2,hl,0
+deafness remedial therapy,8E3..,read3,hl,0
+deafness remedial therapy nos,8E3Z.,read2,hl,0
+deafness remedial therapy nos,8E3Z.,read3,hl,0
+deafness symptom,1C13.,read2,hl,0
+deafness symptom,1C13.,read3,hl,0
+deafness symptom,XM0Cb,read3,hl,0
+diabetes deafness syndrome maternally transmitted,X40JZ,read3,hl,0
+diabetes insipidus  diabetes mellitus  optic atrophy and deafness,PKyP.,read2,hl,0
+diabetes insipidus  diabetes mellitus  optic atrophy and deafness,X008t,read3,hl,0
+didmoad   diabetes insipidus diabetes mellitus  optic atrophy and deafness,X008t,read3,hl,0
+difficulty hearing,XE0s9,read3,hl,0
+difficulty hearing in noise,Xa0PZ,read3,hl,0
+difficulty hearing whispers,1C19.,read2,hl,0
+difficulty hearing whispers,XaIxN,read3,hl,0
+difficulty hearing with background noise,1C18.,read2,hl,0
+difficulty hearing with background noise,XaIxM,read3,hl,0
+dissociative deafness,E2012,read3,hl,0
+dominant sensorineural hearing loss,X00kR,read3,hl,0
+door   deafness  triphalangeal thumbs  onychodystrophy,PKyz8,read2,hl,0
+door   deafness  triphalangeal thumbs  onychodystrophy,X50I0,read3,hl,0
+drug ototoxicity   deafness,F5915,read2,hl,0
+drug ototoxicity   deafness,F5915,read3,hl,0
+drug ototoxicity   deafness,XM1QG,read3,hl,0
+dual sensory impairment   deafblind,Fy1..,read2,hl,0
+dual sensory impairment   deafblind,XaYPJ,read3,hl,0
+ear anomalies with hearing impaired  unspecified,P400.,read2,hl,0
+ear anomalies with hearing impaired  unspecified,P400.,read3,hl,0
+ear anomalies with hearing impairment,P40..,read2,hl,0
+ear anomalies with hearing impairment,P40..,read3,hl,0
+ear anomaly with hearing impaired nos,P40zz,read2,hl,0
+ear anomaly with hearing impaired nos,P40zz,read3,hl,0
+functional hearing loss,X00kW,read3,hl,0
+h o  hearing problem,1493,read2,hl,0
+h o  hearing problem,1493,read3,hl,0
+h o  impaired hearing,XaXeh,read3,hl,0
+hearing difficulty,1C12.,read2,hl,0
+hearing difficulty,1C12.,read3,hl,0
+hearing impaired,XE0s9,read3,hl,0
+hearing impairment,F5A..,read2,hl,0
+hearing impairment,XE0s9,read3,hl,0
+hearing loss,F59..,read2,hl,0
+hearing loss,F59..,read3,hl,0
+hearing loss,XE0s9,read3,hl,0
+hearing loss,XE1AD,read3,hl,0
+hearing loss     deafness  ,F59..,read3,hl,0
+hearing loss  unspecified,H919,icd10,hl,0
+hearing loss associated with syndrome,X00kX,read3,hl,0
+hearing problem,Xa7SQ,read3,hl,0
+hi   hearing impairment,XE0s9,read3,hl,0
+hid   hystrix ichthyosis with deafness syndrome,X78CP,read3,hl,0
+high frequency deafness,F591.,read2,hl,0
+high frequency deafness,F594.,read2,hl,0
+high frequency deafness,F591.,read3,hl,0
+high frequency deafness,X00kP,read3,hl,0
+history of impaired hearing,XaXeh,read3,hl,0
+hl   hearing loss,XE0s9,read3,hl,0
+hystrix ichthyosis with deafness,X78CP,read3,hl,0
+inner ear hearing loss,F5911,read3,hl,0
+keratitis ichthyosis and deafness syndrome,X50IK,read3,hl,0
+keratosis pilaris with ichthyosis and deafness,X50IO,read3,hl,0
+kids   keratitis ichthyosis and deafness syndrome,X50IK,read3,hl,0
+knuckle pads  leuconychia and deafness,X50Ir,read3,hl,0
+low frequency deafness,F591.,read2,hl,0
+low frequency deafness,F595.,read2,hl,0
+low frequency deafness,F591.,read3,hl,0
+low frequency deafness,X00kQ,read3,hl,0
+maternally inherited deafness,F596.,read2,hl,1
+maternally inherited deafness,XaOPs,read3,hl,1
+megaloblastic anaemia  thiamine responsive  with diabetes mellitus and sensorineural deafness,X40JW,read3,hl,0
+mhl   mixed hearing loss,F592.,read3,hl,0
+mild acquired hearing loss,F597.,read2,hl,0
+mild acquired hearing loss,XaRE2,read3,hl,0
+mild sensorineural hearing loss,F591D,read2,hl,0
+mild sensorineural hearing loss,XaZuF,read3,hl,0
+mixed conductive and sensorineural deafness,3892,icd9,hl,0
+mixed conductive and sensorineural deafness,F592.,read2,hl,0
+mixed conductive and sensorineural deafness,F592.,read3,hl,0
+mixed conductive and sensorineural hearing loss,F592.,read3,hl,0
+mixed conductive and sensorineural hearing loss  bilateral,H906,icd10,hl,0
+mixed conductive and sensorineural hearing loss  bilateral,F5921,read2,hl,0
+mixed conductive and sensorineural hearing loss  bilateral,F5921,read3,hl,0
+mixed conductive and sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,H907,icd10,hl,0
+mixed conductive and sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,F5920,read2,hl,0
+mixed conductive and sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,F5920,read3,hl,0
+mixed conductive and sensorineural hearing loss  unspecified,H908,icd10,hl,0
+mixed deafness,F592.,read3,hl,0
+mixed hearing loss,F592.,read2,hl,0
+mixed hearing loss,F592.,read3,hl,0
+moderate acquired hearing loss,F598.,read2,hl,0
+moderate acquired hearing loss,XaRE3,read3,hl,0
+moderate sensorineural hearing loss,F591C,read2,hl,0
+moderate sensorineural hearing loss,XaZuA,read3,hl,0
+nail dystrophy  deafness syndrome,X50Hr,read3,hl,0
+nerve deafness,F5912,read2,hl,0
+nerve deafness,F5912,read3,hl,0
+nerve deafness,XE1AL,read3,hl,0
+neural hearing loss,F5912,read2,hl,0
+neural hearing loss,F5912,read3,hl,0
+nihl   noise induced hearing loss,F5812,read3,hl,0
+nohl   non organic hearing loss,X00kW,read3,hl,0
+noise induced deafness,F5812,read2,hl,0
+noise induced hearing loss,F5812,read2,hl,0
+noise induced hearing loss,F5812,read3,hl,0
+non organic hearing loss,X00kW,read3,hl,0
+o e   completely deaf,2BL5.,read2,hl,0
+o e   completely deaf,2BL5.,read3,hl,0
+o e   conductive deaf,XE1jw,read3,hl,0
+o e   conductive deaf   tune fork  ,XE1jw,read3,hl,0
+o e   conductive deafness,2BM2.,read2,hl,0
+o e   conductive deafness,2BM2.,read3,hl,0
+o e   conductive deafness,XE1jw,read3,hl,0
+o e   deaf,2BL..,read2,hl,0
+o e   deaf,2BL..,read3,hl,0
+o e   deaf,XM1X8,read3,hl,0
+o e   deaf   conductive,XE1jw,read3,hl,0
+o e   deaf   perceptive,XE1jy,read3,hl,0
+o e   high tone deafness,2BM4.,read2,hl,0
+o e   high tone deafness,2BM4.,read3,hl,0
+o e   perceptive deaf   tune fork  ,XE1jy,read3,hl,0
+o e   perceptive deafness,2BM3.,read2,hl,0
+o e   perceptive deafness,2BM3.,read3,hl,0
+o e   perceptive deafness,XE1jy,read3,hl,0
+o e   significantly deaf,2BL3.,read2,hl,0
+o e   significantly deaf,2BL3.,read3,hl,0
+o e   slightly deaf,2BL2.,read2,hl,0
+o e   slightly deaf,2BL2.,read3,hl,0
+o e   very deaf,2BL4.,read2,hl,0
+o e   very deaf,2BL4.,read3,hl,0
+o e  tune fork conductive deaf,2BM2.,read2,hl,0
+o e  tune fork conductive deaf,2BM2.,read3,hl,0
+o e  tune fork conductive deaf,XE1jw,read3,hl,0
+o e hearing   tested 8th nerve  or  deaf ,2BL..,read3,hl,0
+o e tune fork perceptive deaf,2BM3.,read2,hl,0
+o e tune fork perceptive deaf,2BM3.,read3,hl,0
+o e tune fork perceptive deaf,XE1jy,read3,hl,0
+other and unspecified ear anomaly with hearing impaired,P40z.,read2,hl,0
+other and unspecified ear anomaly with hearing impaired,P40z.,read3,hl,0
+other and unspecified ear anomaly with hearing impaired,XE1K4,read3,hl,0
+other ear disorders   or hearing loss,XE1AD,read3,hl,0
+other external ear anomaly with hearing impairment,P402.,read2,hl,0
+other external ear anomaly with hearing impairment,P402.,read3,hl,0
+other external ear anomaly with hearing impairment nos,P402z,read2,hl,0
+other external ear anomaly with hearing impairment nos,P402z,read3,hl,0
+other hearing loss,H91,icd10,hl,0
+other specified forms of deafness,3898,icd9,hl,0
+other specified forms of hearing loss,F59y.,read2,hl,0
+other specified forms of hearing loss,F59y.,read3,hl,0
+other specified hearing loss,H918,icd10,hl,0
+ototoxic hearing loss,H910,icd10,hl,0
+ototoxicity   deafness,F5915,read2,hl,0
+ototoxicity   deafness,F5915,read3,hl,0
+ototoxicity   deafness,XE17O,read3,hl,0
+ototoxicity   deafness     drug  ,F5915,read3,hl,0
+partial deafness,1C132,read2,hl,0
+partial deafness,1C132,read3,hl,0
+pattern of hearing loss,X75Wh,read3,hl,0
+pd   perceptive deafness,XE17N,read3,hl,0
+perceptive deafness,F591.,read2,hl,0
+perceptive deafness,F591.,read3,hl,0
+perceptive deafness,XE17N,read3,hl,0
+perceptive deafness  diagnos ,XE1AL,read3,hl,0
+perceptive deafness o e,XE1jy,read3,hl,0
+perceptive hearing loss,F591.,read2,hl,0
+perceptive hearing loss,F591.,read3,hl,0
+perceptive hearing loss,XE17N,read3,hl,0
+perceptive hearing loss nos,F591z,read2,hl,0
+perceptive hearing loss nos,F591z,read3,hl,0
+perinatal sensorineural hearing loss,X00kU,read3,hl,0
+photomyoclonus  diabetes mellitus  deafness  nephropathy and cerebral dysfunction,X40JR,read3,hl,0
+postnatal acquired sensorineural hearing loss,X00kV,read3,hl,0
+postoperative profound sensorineural hearing loss,Xa0PN,read3,hl,0
+presbyacusis,F5801,read2,hl,0
+presbyacusis,F5801,read3,hl,0
+presbyacusis,XE1AH,read3,hl,0
+presbyacusis     senile   or other  ,XE1AH,read3,hl,0
+presbycusis,H911,icd10,hl,0
+presbycusis,F5801,read3,hl,0
+problems with hearing,V412,icd9,hl,0
+profound acquired hearing loss,F59A.,read2,hl,0
+profound acquired hearing loss,XaRE5,read3,hl,0
+profound sensorineural hearing loss,F591B,read2,hl,0
+profound sensorineural hearing loss,XaZuE,read3,hl,0
+provision for visual and hearing impairment,X74UF,read3,hl,0
+provision of communicator for visual and hearing impairment,X74UH,read3,hl,0
+provision of guide help for visual and hearing impairment,X74UG,read3,hl,0
+prune belly syndrome with pulmonic stenosis  mental retardation and deafness,X30Lf,read3,hl,0
+recessive sensorineural hearing loss,X00kT,read3,hl,0
+registered deaf,XaNDb,read3,hl,0
+registered hearing impaired,XaNFV,read3,hl,0
+renal tubular acidosis with progressive nerve deafness,K08y8,read2,hl,0
+renal tubular acidosis with progressive nerve deafness,X30Li,read3,hl,0
+requires deafblind block alphabet interpreter,9Nfb.,read2,hl,0
+requires deafblind block alphabet interpreter,XacJG,read3,hl,0
+requires deafblind communicator guide,9NfB.,read2,hl,0
+requires deafblind communicator guide,XaYB3,read3,hl,0
+requires deafblind haptic communication interpreter,9Nfc.,read2,hl,0
+requires deafblind haptic communication interpreter,XacJI,read3,hl,0
+requires deafblind manual alphabet interpreter,9Nfa.,read2,hl,0
+requires deafblind manual alphabet interpreter,XacJF,read3,hl,0
+retrocochlear hearing loss,F5912,read3,hl,0
+rubella deafness,A5602,read2,hl,1
+rubella deafness,A5602,read3,hl,1
+schneiders ooman test for deaf children,XM0iW,read3,hl,1
+senile other presbyacusis,XE1AH,read3,hl,0
+senile presbyacusis,F5801,read2,hl,0
+senile presbyacusis,XE1AH,read3,hl,0
+sensorineural deafness,3891,icd9,hl,0
+sensorineural deafness,XE17N,read3,hl,0
+sensorineural deafness,XE1AL,read3,hl,0
+sensorineural hearing loss,F591.,read2,hl,0
+sensorineural hearing loss,F591.,read3,hl,0
+sensorineural hearing loss,XE17N,read3,hl,0
+sensorineural hearing loss     deafness   high frequency  or  low frequency  ,F591.,read3,hl,0
+sensorineural hearing loss  bilateral,H903,icd10,hl,0
+sensorineural hearing loss  bilateral,F5916,read2,hl,0
+sensorineural hearing loss  bilateral,F5916,read3,hl,0
+sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,H904,icd10,hl,0
+sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,F5917,read2,hl,0
+sensorineural hearing loss  unilateral with unrestricted hearing on the contralateral side,F5917,read3,hl,0
+sensorineural hearing loss  unspecified,H905,icd10,hl,0
+sensory hearing loss,F5911,read2,hl,0
+sensory hearing loss,F5911,read3,hl,0
+sensory neural deafness,XE17N,read3,hl,0
+sensory neural hearing loss,XE17N,read3,hl,0
+severe acquired hearing loss,F599.,read2,hl,0
+severe acquired hearing loss,XaRE4,read3,hl,0
+severe sensorineural hearing loss,F591E,read2,hl,0
+severe sensorineural hearing loss,XaZuB,read3,hl,0
+simulated hearing loss,Xa0U4,read3,hl,0
+snd   sensorineural deafness,XE17N,read3,hl,0
+snhl   sensorineural hearing loss,XE17N,read3,hl,0
+sudden hearing loss  unspecified,3882,icd9,hl,0
+sudden idiopathic hearing loss,H912,icd10,hl,0
+suspected deafness,1J2..,read2,hl,0
+suspected deafness,1J2..,read3,hl,0
+syndromal deafness,X00kX,read3,hl,0
+unilateral deafness,1C131,read2,hl,0
+unilateral deafness,1C131,read3,hl,0
+unspecified conductive hearing loss,F5900,read2,hl,0
+unspecified conductive hearing loss,F5900,read3,hl,0
+unspecified deafness,3899,icd9,hl,0
+unspecified perceptive hearing loss,F5910,read2,hl,0
+unspecified perceptive hearing loss,F5910,read3,hl,0
+unspecified sudden hearing loss,F582.,read2,hl,0
+unspecified sudden hearing loss,F582.,read3,hl,0
+uses deafblind intervener,13o8J,read2,hl,0
+uses deafblind intervener,XacJE,read3,hl,0
+uses deafblind manual alphabet,13o8N,read2,hl,0
+uses deafblind manual alphabet,Xad2A,read3,hl,0
+word deafness,E2F30,read2,hl,0
+word deafness,E2F30,read3,hl,0
+word deafness,Ub1Ub,read3,hl,0
+word deafness,XE1Z4,read3,hl,0
+x linked sensorineural hearing loss,X00kS,read3,hl,1
+Paracusis of Willis,Xa0PY,read3,hl,0
+Obscure auditory dysfunction,X00kL,read3,hl,0
