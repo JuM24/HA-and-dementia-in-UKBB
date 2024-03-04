@@ -14,8 +14,8 @@ hear$eid <- as.character(hear$eid)
 
 # remove people who have opted out of the study
 opt_outs <- read.csv('participant_opt_out.csv')
-opt_outs$X1005679 <- as.character(opt_outs$X1005679)
-hear <- filter(hear, !eid %in% opt_outs$X1005679)
+opt_outs$id <- as.character(opt_outs$id)
+hear <- filter(hear, !eid %in% opt_outs$id)
 
 # change colnames and code emtpy strings as NAs
 colnames(hear) <- c('id', 'hear_dif_0', 'hear_dif_1', 'hear_dif_2', 'hear_dif_3', 'hear_difn_0', 'hear_difn_1', 'hear_difn_2', 'hear_difn_3',
