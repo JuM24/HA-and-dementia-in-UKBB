@@ -2,6 +2,7 @@
 Code to reproduce emulation of target trial for the effect of the use of hearing aids on dementia in people with hearing loss in UKBB.
 
 ## Required files
+The below table lists the UK Biobank field IDs that are required for the analyses.
 
 Field ID | Description
 ----------- | -----
@@ -26,5 +27,24 @@ Field ID | Description
 `132460` |	Congenital hearing problem date
 `130000 - 130344` * |	Infection or parasitic disease date
 `131696 - 131838` * |	Skin disorder date
-
+`41259` |	Hospital inpatient records ("hesin.txt")
+`42038` | GP prescription records ("gp_registrations.txt")
+`42039` | GP prescription records ("gp_scripts.csv")
+`42040` | GP clinical event records ("gp_clinical.txt")
 *only even-numbered field IDs
+
+Additionally, the following files are required:
+- "participant_opt_out.csv": a table with one column `id` that contains as observations the UK Biobank participant IDs for participants that have opted out of the study. This list will change over time and researchers with access to UK Biobank data will be regularly informed of additions to the list.
+- "censoring_dates.xlsx": a long-format table with three columns: `disorder`, `data_provider`, and `date`, indicating the name of the disorder as used in the code ('dementia', 'flu', 'heart', 'hepatic', 'respiratory', 'asthma', 'skin_dis', and 'infect'), the provider of the data to UK Biobank, and the date of censoring. This repository contains "censoring_dates.xlsx" for the release of UK Biobank used in our analyses. The release that you use may not be the same, so you might need to check these dates and correct/replace them if necessary.
+
+
+## Running the code
+1. Download the contents of this repository and extract them to the folder that will contain all the code, datasets, and variables derived in the process of data preparation.
+2. Install R version 4.3.2 and run the following (choose "activate the project and use the project library" when prompted):
+```R
+  install.packages('renv')
+  renv::restore()
+```
+`renv::restore()` might need to be run again to install to correct versions of the required packages.
+
+3. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
