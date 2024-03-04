@@ -1,5 +1,5 @@
 # choose alternative outcome name (default is 'dementia'); can be any among
-# c('hepatic', 'heart', 'respiratory', 'asthma', 'skin', 'infect')
+# c('hepatic', 'heart', 'respiratory', 'asthma', 'skin_dis', 'infect')
 outcome <- ''
 
 # convert the strings to symbols (the '!!' is then later used within `dplyr` to unquote the symbol)
