@@ -8,7 +8,6 @@ outcome_sym <- rlang::sym(outcome)
 outcome_date_sym <- rlang::sym(outcome_date)
 
 
-
 library(tidyverse)
 library(MatchIt)
 
