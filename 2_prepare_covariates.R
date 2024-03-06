@@ -8,7 +8,8 @@ library(semPlot)
 source('0_helper_functions.R')
 
 
-invalid_dates <- as.Date(c('01/01/1900', '01/01/1901', '02/02/1902', '03/03/1903', '07/07/2037'), format = '%d/%m/%Y')
+invalid_dates <- as.Date(c('01/01/1900', '01/01/1901', '02/02/1902', '03/03/1903', 
+                           '07/07/2037'), format = '%d/%m/%Y')
 
 # main dataset
 data_all <- readRDS('main_vars.Rds')
@@ -28,9 +29,12 @@ dems <- data_all %>% select(c(eid, starts_with(c('X31.', 'X53.', 'X34.', 'X52.')
 dems <- dems %>%
   rename(sex = X31.0.0, date_0 = X53.0.0, date_1 = X53.1.0, date_2 = X53.2.0, date_3 = X53.3.0,
          birth_year = X34.0.0, birth_month = X52.0.0)
-dems$birth_year <- as.character(dems$birth_year); dems$birth_month <- as.character(dems$birth_month)
-dems$birth_date <- as.Date(paste0('01/', dems$birth_month, '/' ,dems$birth_year), format = '%d/%m/%Y')
-dems[, c('date_0', 'date_1', 'date_2', 'date_3')] <- lapply(dems[, c('date_0', 'date_1', 'date_2', 'date_3')], as.Date, format = '%Y-%m-%d')
+dems$birth_year <- as.character(dems$birth_year); dems$birth_month <- 
+  as.character(dems$birth_month)
+dems$birth_date <- as.Date(paste0('01/', dems$birth_month, '/' ,dems$birth_year), 
+                           format = '%d/%m/%Y')
+dems[, c('date_0', 'date_1', 'date_2', 'date_3')] <- 
+  lapply(dems[, c('date_0', 'date_1', 'date_2', 'date_3')], as.Date, format = '%Y-%m-%d')
 dems$age_0 <- as.numeric(difftime(dems$date_0, dems$birth_date, units='days'))/365.25
 dems$age_1 <- as.numeric(difftime(dems$date_1, dems$birth_date, units='days'))/365.25
 dems$age_2 <- as.numeric(difftime(dems$date_2, dems$birth_date, units='days'))/365.25
@@ -71,19 +75,30 @@ rm(education_0, education_1, education_2, education_3)
 
 
 ## cognition
-cognition <- data_all %>% select(c(eid, starts_with(c('X20016.', 'X20018.', 'X20023.', 'X399.', 'X6351.', 'X6373.', 'X23324.', 'X4282.', 'X21004.'))))
-cognition <- subset(cognition, select=-c(X399.0.3, X399.1.3, X399.2.3, X399.3.3, X399.0.1, X399.1.1, X399.2.1, X399.3.1)) # use only second round
-cognition <- subset(cognition, select=-c(X4282.1.0)) # numerical memory was not tested then, and the columns has all NAs
-colnames(cognition) <- c('id', 'VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'ProsMem_0', 'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 'RT_0', 'RT_1', 'RT_2', 'RT_3',
-                         'VisMem_0', 'VisMem_1', 'VisMem_2', 'VisMem_3',
-                         'TMTb_2', 'TMTb_3', 'MR_2', 'MR_3', 'DSS_2', 'DSS_3', 'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')
+cognition <- data_all %>% 
+  select(c(eid, starts_with(c('X20016.', 'X20018.', 'X20023.', 'X399.', 'X6351.', 
+                              'X6373.', 'X23324.', 'X4282.', 'X21004.'))))
+# use only second round
+cognition <- subset(cognition, select=-c(X399.0.3, X399.1.3, X399.2.3, X399.3.3, 
+                                         X399.0.1, X399.1.1, X399.2.1, X399.3.1))
+# numerical memory was not tested then, and the columns has all NAs
+cognition <- subset(cognition, select=-c(X4282.1.0)) 
+colnames(cognition) <- c('id', 'VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'ProsMem_0', 
+                         'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 'RT_0', 'RT_1', 
+                         'RT_2', 'RT_3', 'VisMem_0', 'VisMem_1', 'VisMem_2', 
+                         'VisMem_3', 'TMTb_2', 'TMTb_3', 'MR_2', 'MR_3', 'DSS_2', 
+                         'DSS_3', 'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')
 # remove outliers 
-cognition[, c('VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'RT_0', 'RT_1', 'RT_2', 'RT_3', 'VisMem_0', 'VisMem_1', 'VisMem_2', 'VisMem_3', 
-               'ProsMem_0', 'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 'DSS_2', 'DSS_3', 'MR_2', 'MR_3', 
-               'TMTb_2', 'TMTb_3', 'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')] <- 
-  lapply(cognition[, c('VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'RT_0', 'RT_1', 'RT_2', 'RT_3', 'VisMem_0', 'VisMem_1', 'VisMem_2', 'VisMem_3', 
-                        'ProsMem_0', 'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 'DSS_2', 'DSS_3', 'MR_2', 'MR_3', 
-                        'TMTb_2', 'TMTb_3', 'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')], outliers, var_metric=4, method='SD')
+cognition[, c('VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'RT_0', 'RT_1', 'RT_2', 'RT_3', 
+              'VisMem_0', 'VisMem_1', 'VisMem_2', 'VisMem_3', 'ProsMem_0', 
+              'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 'DSS_2', 'DSS_3', 'MR_2', 
+              'MR_3', 'TMTb_2', 'TMTb_3', 'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')] <- 
+  lapply(cognition[, c('VNR_0', 'VNR_1', 'VNR_2', 'VNR_3', 'RT_0', 'RT_1', 'RT_2', 
+                       'RT_3', 'VisMem_0', 'VisMem_1', 'VisMem_2', 'VisMem_3', 
+                        'ProsMem_0', 'ProsMem_1', 'ProsMem_2', 'ProsMem_3', 
+                       'DSS_2', 'DSS_3', 'MR_2', 'MR_3', 'TMTb_2', 'TMTb_3', 
+                       'NM_0', 'NM_2', 'NM_3', 'TR_2', 'TR_3')], 
+         outliers, var_metric=4, method='SD')
 
 # Calculate the latent G
 
@@ -123,7 +138,7 @@ cognition$TMTb_2[cognition$TMTb_2==0] <- NA
 cognition$TMTb_2 = log(cognition$TMTb_2+10)
 model_2<- '
       G =~ MR_2 + DSS_2 + VNR_2 + TMTb_2 + RT_2 + VisMem_2 + ProsMem_2 + NM_2 + TR_2
-      MR_2 ~~ VNR_2               # include residual correlations here - these two tests are more similar than they are to other tests in the battery, also below.
+      MR_2 ~~ VNR_2               
       RT_2 ~~ DSS_2
       '
 fit_2 <- sem(model_2, data=cognition, missing='fiml.x')
@@ -142,7 +157,7 @@ cognition$TMTb_3 = log(cognition$TMTb_3+10)
 # SEM
 model_3<- '
       G =~ MR_3 + DSS_3 + VNR_3 + TMTb_3 + RT_3 + VisMem_3 + ProsMem_3 + NM_3 + TR_3
-      MR_3 ~~ VNR_3               # include residual correlations here - these two tests are more similar than they are to other tests in the battery, also below.
+      MR_3 ~~ VNR_3               
       RT_3 ~~ DSS_3
       '
 fit_3 <- sem(model_3, data=cognition, missing='fiml.x')
@@ -192,19 +207,21 @@ social$X1031.3.0[social$X1031.3.0 > 4] <- 1
 social$X6160.3.0[social$X6160.3.0 == -3] <- NA
 social$X6160.3.0[social$X6160.3.0 > 0] <- 0
 social$X6160.3.0[social$X6160.3.0 == -7] <- 1
-social <- social %>% mutate(soc_isol_0 = rowSums(across(c(X709.0.0 , X1031.0.0, X6160.0.0)), na.rm = TRUE),
-                            soc_isol_1 = rowSums(across(c(X709.1.0 , X1031.1.0, X6160.1.0)), na.rm = TRUE),
-                            soc_isol_2 = rowSums(across(c(X709.2.0 , X1031.2.0, X6160.2.0)), na.rm = TRUE),
-                            soc_isol_3 = rowSums(across(c(X709.3.0 , X1031.3.0, X6160.3.0)), na.rm = TRUE))
+social <- social %>% 
+  mutate(soc_isol_0 = rowSums(across(c(X709.0.0 , X1031.0.0, X6160.0.0)), na.rm = TRUE),
+         soc_isol_1 = rowSums(across(c(X709.1.0 , X1031.1.0, X6160.1.0)), na.rm = TRUE),
+         soc_isol_2 = rowSums(across(c(X709.2.0 , X1031.2.0, X6160.2.0)), na.rm = TRUE),
+         soc_isol_3 = rowSums(across(c(X709.3.0 , X1031.3.0, X6160.3.0)), na.rm = TRUE))
 social$soc_isol_0[social$soc_isol_0 >= 2] <- 1
 social$soc_isol_1[social$soc_isol_1 >= 2] <- 1
 social$soc_isol_2[social$soc_isol_2 >= 2] <- 1
 social$soc_isol_3[social$soc_isol_3 >= 2] <- 1
 # among those that have no social isolation, check for NAs in any of the three questions
-social <- social %>% mutate(na_count_0 = rowSums(across(c(X709.0.0, X1031.0.0, X6160.0.0), is.na)),
-                            na_count_1 = rowSums(across(c(X709.1.0, X1031.1.0, X6160.1.0), is.na)),
-                            na_count_2 = rowSums(across(c(X709.2.0, X1031.2.0, X6160.2.0), is.na)),
-                            na_count_3 = rowSums(across(c(X709.3.0, X1031.3.0, X6160.3.0), is.na)))
+social <- social %>% 
+  mutate(na_count_0 = rowSums(across(c(X709.0.0, X1031.0.0, X6160.0.0), is.na)),
+         na_count_1 = rowSums(across(c(X709.1.0, X1031.1.0, X6160.1.0), is.na)),
+         na_count_2 = rowSums(across(c(X709.2.0, X1031.2.0, X6160.2.0), is.na)),
+         na_count_3 = rowSums(across(c(X709.3.0, X1031.3.0, X6160.3.0), is.na)))
 # those with a score of 0 or 1 could have such a low score because of NAs, so we have to make sure
 # if only one is NA and the other two are 0, keep categorised as not isolated
 # if two or more are missing, categorise as NA
@@ -231,7 +248,8 @@ death$death <- 0; death$death[!is.na(death$death_date)] <- 1
 
 ## mood disorders
 mood_ado <- data_all %>% 
-  select(c(eid, starts_with(c('X130890.', 'X130892.', 'X130894.', 'X130896.', 'X130898.', 'X130900.', 'X130902.')))) %>%
+  select(c(eid, starts_with(c('X130890.', 'X130892.', 'X130894.', 'X130896.', 
+                              'X130898.', 'X130900.', 'X130902.')))) %>%
   mutate(across(starts_with('X'), ~as.Date(., format = '%Y-%m-%d'))) %>%
   mutate(mood_dis_date = reduce(across(starts_with('X')), pmin, na.rm = TRUE)) %>%
   rename(id = eid) %>%
@@ -250,19 +268,35 @@ deprivation <- data_all %>%
 
 # various other disorders
 outcomes <- data_all %>% 
-  select(c(eid, starts_with(c('X131484.', 'X131486.', 'X131488.', 'X131490.', 'X131492.', 'X131494.', 'X131496.', # respiratory disease
-                              'X131498.', 'X131658.', 'X131660.', 'X131662.', 'X131664.', 'X131666.', 'X131668.', 'X131670.', # liver disease
-                              'X131438.', 'X131440.', 'X131442.', 'X131444.', 'X131446.', 'X131448.', 'X131450.', 'X131452.', 'X131454.', 'X131456.', # influenza
-                              'X131296.', 'X131298.', 'X131300.', 'X131302.', 'X131304.', 'X131306.'))))
+  # respiratory disease
+  select(c(eid, starts_with(c('X131484.', 'X131486.', 'X131488.', 'X131490.', 
+                              'X131492.', 'X131494.', 'X131496.',
+                              # liver disease
+                              'X131498.', 'X131658.', 'X131660.', 'X131662.', 
+                              'X131664.', 'X131666.', 'X131668.', 'X131670.',
+                              # influenza
+                              'X131438.', 'X131440.', 'X131442.', 'X131444.', 
+                              'X131446.', 'X131448.', 'X131450.', 'X131452.', 
+                              'X131454.', 'X131456.', 'X131296.', 'X131298.', 
+                              'X131300.', 'X131302.', 'X131304.', 'X131306.'))))
 outcomes <- outcomes %>%
   mutate(across(starts_with('X'), ~as.Date(., format = '%Y-%m-%d')))  %>%
-  mutate(respiratory_date = reduce(across(c('X131484.0.0', 'X131486.0.0', 'X131488.0.0', 'X131490.0.0', 'X131492.0.0', 'X131494.0.0', 'X131496.0.0', 
-                                            'X131498.0.0')), pmin, na.rm = TRUE)) %>%
-  mutate(hepatic_date = reduce(across(c('X131658.0.0', 'X131660.0.0', 'X131662.0.0', 'X131664.0.0', 'X131666.0.0', 'X131668.0.0', 'X131670.0.0')), 
+  mutate(respiratory_date = 
+           reduce(across(c('X131484.0.0', 'X131486.0.0', 'X131488.0.0', 
+                           'X131490.0.0', 'X131492.0.0', 'X131494.0.0', 
+                           'X131496.0.0', 'X131498.0.0')), 
+                  pmin, na.rm = TRUE)) %>%
+  mutate(hepatic_date = reduce(across(c('X131658.0.0', 'X131660.0.0', 'X131662.0.0', 
+                                        'X131664.0.0', 'X131666.0.0', 'X131668.0.0', 
+                                        'X131670.0.0')), 
                                pmin, na.rm = TRUE)) %>%
-  mutate(flu_date = reduce(across(c('X131438.0.0', 'X131440.0.0', 'X131442.0.0', 'X131444.0.0', 'X131446.0.0', 'X131448.0.0', 'X131450.0.0',
-                                    'X131452.0.0', 'X131454.0.0', 'X131456.0.0')), pmin, na.rm = TRUE)) %>%
-  mutate(heart_date = reduce(across(c('X131296.0.0', 'X131298.0.0', 'X131300.0.0', 'X131302.0.0', 'X131304.0.0', 'X131306.0.0')), pmin, na.rm = TRUE)) %>%
+  mutate(flu_date = reduce(across(c('X131438.0.0', 'X131440.0.0', 'X131442.0.0', 
+                                    'X131444.0.0', 'X131446.0.0', 'X131448.0.0', 
+                                    'X131450.0.0', 'X131452.0.0', 'X131454.0.0', 
+                                    'X131456.0.0')), pmin, na.rm = TRUE)) %>%
+  mutate(heart_date = reduce(across(c('X131296.0.0', 'X131298.0.0', 'X131300.0.0', 
+                                      'X131302.0.0', 'X131304.0.0', 'X131306.0.0')), 
+                             pmin, na.rm = TRUE)) %>%
   rename(id = eid) %>%
   select(id, respiratory_date, hepatic_date, flu_date, heart_date) %>%  
   filter(rowSums(is.na(select(., -id))) != ncol(.) - 1)
@@ -362,8 +396,10 @@ diagnoses_dates_dt <- diagnoses_dates %>%
   filter(eid %in% multi_source$eid) %>%
   filter(!is.na(epistart)) %>%
   data.table::as.data.table(diagnoses_dates)
-inpatient_flux_last <- as.data.frame(diagnoses_dates_dt[, .(epistart = max(epistart, na.rm = TRUE)), by = eid])
-inpatient_flux_last <- merge(inpatient_flux_last, subset(diagnoses_dates, select = c(eid, epistart, dsource)), 
+inpatient_flux_last <- as.data.frame(diagnoses_dates_dt[, .(epistart = 
+                                                              max(epistart, na.rm = TRUE)), by = eid])
+inpatient_flux_last <- merge(inpatient_flux_last, subset(diagnoses_dates, select = 
+                                                           c(eid, epistart, dsource)), 
                              by = c('eid', 'epistart'), all.x = TRUE) %>%
   rename(id = eid, data_provider = dsource) %>%
   select(id, data_provider) %>%
@@ -380,7 +416,8 @@ inpatient_last <- rbind(inpatient_constant, inpatient_flux_last) %>%
 
 
 # For those that do not have inpatient data providers, we will first use GP registrations to fill the gaps
-gp_reg <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>% rename(id = eid)
+gp_reg <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>% 
+  rename(id = eid)
 gp_reg[gp_reg == ''] <- NA
 gp_reg <- gp_reg %>%
   select(id, data_provider, reg_date, deduct_date) %>%
@@ -406,13 +443,18 @@ gp_reg_flux <- gp_reg_flux %>%
 # people with registrations but without de-registrations were still registered 
 # with their latest GP at time of data fetch, so get dates of data fetch
 # (1= England(Vision), 2= Scotland, 3 = England (TPP), 4 = Wales)
-gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '1'] <- as.Date('30/06/2017', format = '%d/%m/%Y') # England Vision
-gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '2'] <- as.Date('31/05/2017', format = '%d/%m/%Y') # Scotland
-gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '3'] <- as.Date('31/08/2016', format = '%d/%m/%Y') # England TPP
-gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '4'] <- as.Date('30/09/2017', format = '%d/%m/%Y') # Wales
+gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '1'] <- 
+  as.Date('30/06/2017', format = '%d/%m/%Y') # England Vision
+gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '2'] <- 
+  as.Date('31/05/2017', format = '%d/%m/%Y') # Scotland
+gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '3'] <- 
+  as.Date('31/08/2016', format = '%d/%m/%Y') # England TPP
+gp_reg_flux$deduct_date[is.na(gp_reg_flux$deduct_date) & gp_reg_flux$data_provider == '4'] <- 
+  as.Date('30/09/2017', format = '%d/%m/%Y') # Wales
 gp_reg_flux$total_time <- as.numeric((difftime(gp_reg_flux$deduct_date, gp_reg_flux$reg_date, units = 'days')))/365.25
 
-# for registrations of people that changed data providers, calculate the length of the period of registration with each data provider
+# for registrations of people that changed data providers, 
+# calculate the length of the period of registration with each data provider
 gp_reg_flux_freq <- gp_reg_flux %>%
   group_by(id, data_provider) %>%
   summarise(total_time = sum(total_time)) %>%
@@ -482,10 +524,12 @@ data_provider_last <- rbind(inpatient_last, filter(gp_reg_last, !id %in% inpatie
   rename(data_provider_last = data_provider)
 
 # harmonise naming of data providers
-data_provider_freq$data_provider_freq[data_provider_freq$data_provider_freq == 1 | data_provider_freq$data_provider_freq == 3] <- 'HES'
+data_provider_freq$data_provider_freq[data_provider_freq$data_provider_freq == 1 | 
+                                        data_provider_freq$data_provider_freq == 3] <- 'HES'
 data_provider_freq$data_provider_freq[data_provider_freq$data_provider_freq == 2] <- 'SMR'
 data_provider_freq$data_provider_freq[data_provider_freq$data_provider_freq == 4] <- 'PEDW'
-data_provider_last$data_provider_last[data_provider_last$data_provider_last == 1 | data_provider_last$data_provider_last == 3] <- 'HES'
+data_provider_last$data_provider_last[data_provider_last$data_provider_last == 1 |
+                                        data_provider_last$data_provider_last == 3] <- 'HES'
 data_provider_last$data_provider_last[data_provider_last$data_provider_last == 2] <- 'SMR'
 data_provider_last$data_provider_last[data_provider_last$data_provider_last == 4] <- 'PEDW'
 
@@ -498,9 +542,10 @@ data_provider_last$data_provider_last[data_provider_last$data_provider_last == 4
 
 
 
-# This code combines data fields 41270, 41271, 41280, and 41281, which refer to inpatient diagnoses and dates of admission.
-# For 6 participants, array indexing when combining diagnoses codes and dates fails, so I used the record-level data to access
-# hospital addmissions for those 6 participants.
+# This code combines data fields 41270, 41271, 41280, and 41281, 
+# which refer to inpatient diagnoses and dates of admission.
+# For 6 participants, array indexing when combining diagnoses codes and dates fails, 
+# so I used the record-level data to access hospital addmissions for those 6 participants.
 diagnoses <- data_all %>%
   select(eid, starts_with(c('X41270.', 'X41280.', 'X41271.', 'X41281.'))) %>%
   rename(id = eid)
@@ -521,14 +566,28 @@ icd10 <- icd10[rowSums(is.na(icd10))!=ncol(icd10)-1,]
 icd10_date <- icd10_date[rowSums(is.na(icd10_date))!=ncol(icd10_date)-1,]
 
 # transform to long-type format
-icd9_long <- icd9 %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE); colnames(icd9_long) <- c('id', 'column', 'diagnosis'); icd9_long$column <- sub('X41271.', '', icd9_long$column)
-icd9_date_long <- icd9_date %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE); colnames(icd9_date_long) <- c('id', 'column', 'date'); icd9_date_long$column <- sub('X41281.', '', icd9_date_long$column)
-icd10_long <- icd10 %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE); colnames(icd10_long) <- c('id', 'column', 'diagnosis');  icd10_long$column <- sub('X41270.', '', icd10_long$column)
-icd10_date_long <- icd10_date %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE); colnames(icd10_date_long) <- c('id', 'column', 'date');  icd10_date_long$column <- sub('X41280.', '', icd10_date_long$column)
+icd9_long <- icd9 %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE)
+colnames(icd9_long) <- c('id', 'column', 'diagnosis')
+icd9_long$column <- sub('X41271.', '', icd9_long$column)
+
+icd9_date_long <- icd9_date %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE)
+colnames(icd9_date_long) <- c('id', 'column', 'date')
+icd9_date_long$column <- sub('X41281.', '', icd9_date_long$column)
+
+icd10_long <- icd10 %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE)
+colnames(icd10_long) <- c('id', 'column', 'diagnosis')
+icd10_long$column <- sub('X41270.', '', icd10_long$column)
+
+icd10_date_long <- icd10_date %>%  pivot_longer(-id, names_to = 'diagnosis', values_drop_na=TRUE)
+colnames(icd10_date_long) <- c('id', 'column', 'date')
+icd10_date_long$column <- sub('X41280.', '', icd10_date_long$column)
 
 # combine all diagnoses
-icd9 <- merge(icd9_long, icd9_date_long, by = c('id', 'column')); icd9$column <- NULL; icd9$version <- 'icd9'
-icd10 <- merge(icd10_long, icd10_date_long, by = c('id', 'column')); icd10$column <- NULL; icd10$version <- 'icd10'
+icd9 <- merge(icd9_long, icd9_date_long, by = c('id', 'column'))
+icd9$column <- NULL; icd9$version <- 'icd9'
+icd10 <- merge(icd10_long, icd10_date_long, by = c('id', 'column'))
+icd10$column <- NULL; icd10$version <- 'icd10'
+
 inpatient <- rbind(icd9, icd10)
 saveRDS(inpatient, 'inpatient_diagnoses.rds') 
 
@@ -543,8 +602,9 @@ outcomes[outcomes == 99] <- NA
 
 # merge all data frames in the list
 covariates <- Reduce(function(x, y) merge(x, y, by = 'id', all = TRUE), 
-                    list(dementia, dems, education, deprivation, cognition, social, death, mood_ado, outcomes, 
-                         asthma, skin, infect, data_provider_last, data_provider_freq))
+                    list(dementia, dems, education, deprivation, cognition, 
+                         social, death, mood_ado, outcomes, asthma, skin, 
+                         infect, data_provider_last, data_provider_freq))
 
 covariates$id <- as.character(covariates$id)
 

@@ -8,7 +8,8 @@ source('0_helper_functions.R')
 # field IDs 2247, 2257, 4849, 3393, 20019, 20021, 131258, 131260, 131259, 131261, 4792, 132460
 
 hear <- readRDS('main_vars.Rds') %>%
-  select(eid, starts_with(c('X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 'X20021.', 'X131258.', 'X131260.', 'X131259.', 'X131261.',
+  select(eid, starts_with(c('X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 
+                            'X20021.', 'X131258.', 'X131260.', 'X131259.', 'X131261.',
                             'X4792.', 'X132460.')))
 hear$eid <- as.character(hear$eid)
 
@@ -18,10 +19,15 @@ opt_outs$id <- as.character(opt_outs$id)
 hear <- filter(hear, !eid %in% opt_outs$id)
 
 # change colnames and code emtpy strings as NAs
-colnames(hear) <- c('id', 'hear_dif_0', 'hear_dif_1', 'hear_dif_2', 'hear_dif_3', 'hear_difn_0', 'hear_difn_1', 'hear_difn_2', 'hear_difn_3',
-                    'hear_test_0', 'hear_test_1', 'hear_test_2', 'hear_test_3', 'hear_aid_0', 'hear_aid_1', 'hear_aid_2', 'hear_aid_3',
-                    'srt_r_0', 'srt_r_1', 'srt_r_2', 'srt_r_3', 'srt_l_0', 'srt_l_1', 'srt_l_2', 'srt_l_3', 'date_hear_loss_a', 'date_hear_loss_b',
-                    'source_hear_loss_a', 'source_hear_loss_b', 'cochl_impl_0', 'cochl_impl_1', 'cochl_impl_2', 'cochl_impl_3','hear_congenital')
+colnames(hear) <- c('id', 'hear_dif_0', 'hear_dif_1', 'hear_dif_2', 'hear_dif_3', 
+                    'hear_difn_0', 'hear_difn_1', 'hear_difn_2', 'hear_difn_3',
+                    'hear_test_0', 'hear_test_1', 'hear_test_2', 'hear_test_3', 
+                    'hear_aid_0', 'hear_aid_1', 'hear_aid_2', 'hear_aid_3',
+                    'srt_r_0', 'srt_r_1', 'srt_r_2', 'srt_r_3', 'srt_l_0', 
+                    'srt_l_1', 'srt_l_2', 'srt_l_3', 'date_hear_loss_a', 
+                    'date_hear_loss_b', 'source_hear_loss_a', 'source_hear_loss_b', 
+                    'cochl_impl_0', 'cochl_impl_1', 'cochl_impl_2', 'cochl_impl_3',
+                    'hear_congenital')
 hear[hear == ''] <- NA
 
 
@@ -51,15 +57,17 @@ hear$cochl_impl_3[hear$cochl_impl_3 == -3] <- NA
 ### medical diagnoses (hearing aids, hearing loss)
 ###
 
-# This imports the medical hospital and primary-care data and searches for the relevant codes in each.
-# It then combines both sources to create a single source of diagnoses, keeping just the earliest date of diagnosis.
+# This imports the medical hospital and primary-care data and searches 
+# for the relevant codes in each. It then combines both sources to create 
+# a single source of diagnoses, keeping just the earliest date of diagnosis.
 
 # Requires:
 # inpatient, GP, diagnosis codes
 
 # diagnosis codes
 diagnosis_codes <- read.csv('hearing_codes.csv') # EHR codes for HL and HA
-diagnosis_codes <- distinct(diagnosis_codes, code, source, .keep_all = TRUE) # remove duplicate codes within one source (so within ICD10, or ICD9, etc.)
+# remove duplicate codes within one source (so within ICD10, or ICD9, etc.)
+diagnosis_codes <- distinct(diagnosis_codes, code, source, .keep_all = TRUE)
 
 ## hearing loss and hearing aid ascertainment
 # inpatient diagnoses
@@ -67,17 +75,24 @@ inpatient <- readRDS('inpatient_diagnoses.rds') # field IDs 41270, 41271, 41280,
 colnames(inpatient)[colnames(inpatient) == 'diagnosis'] <- 'code'
 inpatient <- filter(inpatient, code %in% diagnosis_codes$code[diagnosis_codes$source == 'icd9'] | # keep only relevant diagnoses
                       code %in% diagnosis_codes$code[diagnosis_codes$source == 'icd10']) %>%
-  mutate(across(date, ~replace(., . %in% c('1900-01-01', '1901-01-01', '1902-02-02', '1903-03-03', '2037-07-07'), NA))) # replace invalid dates with NAs
+  # replace invalid dates with NAs
+  mutate(across(date, ~replace(., . %in% c('1900-01-01', '1901-01-01', 
+                                           '1902-02-02', '1903-03-03', '2037-07-07'), NA))) 
 inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
 
 # GP diagnoses
 gp_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, quote='') # field ID 42040
 gp_diagnoses <- as.data.frame(gp_diagnoses)
-gp_diagnoses <- subset(gp_diagnoses, select = c(eid, data_provider, event_dt, read_2, read_3))
+gp_diagnoses <- subset(gp_diagnoses, select = c(eid, data_provider, event_dt, 
+                                                read_2, read_3))
 colnames(gp_diagnoses) <- c('id', 'data_provider', 'date_primary', 'read2', 'read3')
-gp_diagnoses <- filter(gp_diagnoses, (read2 %in% diagnosis_codes$code[diagnosis_codes$source == 'read2']) | # keep only relevant diagnoses
+gp_diagnoses <- filter(gp_diagnoses, 
+                       (read2 %in% diagnosis_codes$code[diagnosis_codes$source == 'read2']) | # keep only relevant diagnoses
                          (read3 %in% diagnosis_codes$code[diagnosis_codes$source == 'read3'])) %>%
-  mutate(across(date_primary, ~replace(., . %in% c('01/01/1900', '01/01/1901', '02/02/1902', '03/03/1903', '07/07/2037'), NA))) # replace invalid dates with NAs
+  # replace invalid dates with NAs
+  mutate(across(date_primary, ~replace(., . %in% c('01/01/1900', '01/01/1901', 
+                                                   '02/02/1902', '03/03/1903', 
+                                                   '07/07/2037'), NA))) 
 gp_diagnoses$date_primary <- as.Date(gp_diagnoses$date_primary, format = '%d/%m/%Y')
 gp_diagnoses$year <- as.numeric(format(as.Date(gp_diagnoses$date_primary), '%Y'))
 gp_diagnoses[gp_diagnoses == ''] <- NA
@@ -120,18 +135,26 @@ read3 <- filter(gp_diagnoses, !is.na(read3))
 read2 <- subset(read2, select = -c(read3))
 read3 <- subset(read3, select = -c(read2))
 read2$diag_source <- 'read2'; read3$diag_source <- 'read3'
-colnames(read2) <- c('id', 'diag_data_provider', 'diag_date', 'diag_code', 'diag_year', 'diag_desc', 'diag', 'diag_source')
-colnames(read3) <- c('id', 'diag_data_provider', 'diag_date', 'diag_code', 'diag_year', 'diag_desc', 'diag', 'diag_source')
-gp_diagnoses <- rbind(subset(read2, select = c(id, diag, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider)), # re-combine read2 and read3
-                      subset(read3, select = c(id, diag, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider)))
+colnames(read2) <- c('id', 'diag_data_provider', 'diag_date', 'diag_code', 
+                     'diag_year', 'diag_desc', 'diag', 'diag_source')
+colnames(read3) <- c('id', 'diag_data_provider', 'diag_date', 'diag_code', 
+                     'diag_year', 'diag_desc', 'diag', 'diag_source')
+# re-combine read2 and read3
+gp_diagnoses <- rbind(subset(read2, select = c(id, diag, diag_date, diag_year, diag_code, 
+                                               diag_desc, diag_source, diag_data_provider)), 
+                      subset(read3, select = c(id, diag, diag_date, diag_year, diag_code, 
+                                               diag_desc, diag_source, diag_data_provider)))
 inpatient$year <- as.numeric(format(as.Date(inpatient$date), '%Y'))
 inpatient$data_provider <- NA
-colnames(inpatient) <- c('id', 'diag_code', 'diag_date', 'diag_source', 'diag_desc', 'diag', 'diag_year', 'diag_data_provider')
+colnames(inpatient) <- c('id', 'diag_code', 'diag_date', 'diag_source', 'diag_desc', 
+                         'diag', 'diag_year', 'diag_data_provider')
 diagnoses <- rbind(gp_diagnoses,
-                   subset(inpatient, select = c(id, diag, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider)))
+                   subset(inpatient, select = c(id, diag, diag_date, diag_year, diag_code, 
+                                                diag_desc, diag_source, diag_data_provider)))
 
 # add column for congenital disorders
-diagnosis_codes <- subset(diagnosis_codes, select = c(code, congenital)); colnames(diagnosis_codes)[colnames(diagnosis_codes) == 'code'] <- 'diag_code'
+diagnosis_codes <- subset(diagnosis_codes, select = c(code, congenital))
+colnames(diagnosis_codes)[colnames(diagnosis_codes) == 'code'] <- 'diag_code'
 diagnoses <- merge(diagnoses, diagnosis_codes, by = 'diag_code', all.x = TRUE)
 
 # remove duplicate diagnoses of the same type and check for multiple types for same participant
@@ -143,35 +166,48 @@ diagnoses <- distinct(diagnoses, id, diag, .keep_all = TRUE)
 # do this for hearing loss, hearing aid use, hearing aid use cessation, and cochlear implants
 hear_loss_diag <- filter(diagnoses, diag == 'hl')
 hear_loss_diag <- distinct(hear_loss_diag, id, .keep_all = TRUE) %>%
-  rename(hear_loss_code = diag_code, hear_loss_diag = diag, hear_loss_date = diag_date, hear_loss_year = diag_year, hear_loss_desc = diag_desc,
+  rename(hear_loss_code = diag_code, hear_loss_diag = diag, hear_loss_date = diag_date, 
+         hear_loss_year = diag_year, hear_loss_desc = diag_desc,
          hear_loss_source = diag_source, hear_loss_data_provider = diag_data_provider)
 hear_loss_diag$hear_loss <- 1
-hear_loss_diag$hear_loss_nodate <- 0; hear_loss_diag$hear_loss_nodate[is.na(hear_loss_diag$hear_loss_date)] <- 1
+hear_loss_diag$hear_loss_nodate <- 0
+hear_loss_diag$hear_loss_nodate[is.na(hear_loss_diag$hear_loss_date)] <- 1
 
-hear_aid <- filter(diagnoses, diag == 'ha'); hear_aid <- distinct(hear_aid, id, .keep_all = TRUE)
-hear_aid <- subset(hear_aid, select = c(id, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider))
+hear_aid <- filter(diagnoses, diag == 'ha')
+hear_aid <- distinct(hear_aid, id, .keep_all = TRUE)
+hear_aid <- subset(hear_aid, select = c(id, diag_date, diag_year, diag_code, 
+                                        diag_desc, diag_source, diag_data_provider))
 hear_aid$hear_aid <- 1
 colnames(hear_aid) <- c('id',  'hear_aid_date', 'hear_aid_year', 'hear_aid_code', 'hear_aid_desc', 
                         'hear_aid_source', 'hear_aid_data_provider', 'hear_aid')
 hear_aid$hear_aid_nodate <- 0; hear_aid$hear_aid_nodate[is.na(hear_aid$hear_aid_date)] <- 1
 
-cochl_impl <- filter(diagnoses, diag == 'ci'); cochl_impl <- distinct(cochl_impl, id, .keep_all = TRUE)
-cochl_impl <- subset(cochl_impl, select = c(id, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider))
+cochl_impl <- filter(diagnoses, diag == 'ci'); cochl_impl <- 
+  distinct(cochl_impl, id, .keep_all = TRUE)
+cochl_impl <- subset(cochl_impl, select = c(id, diag_date, diag_year, diag_code, 
+                                            diag_desc, diag_source, diag_data_provider))
 cochl_impl$cochl_impl <- 1
-colnames(cochl_impl) <- c('id',  'cochl_impl_date', 'cochl_impl_year', 'cochl_impl_code', 'cochl_impl_desc', 
-                        'cochl_impl_source', 'cochl_impl_data_provider', 'cochl_impl')
+colnames(cochl_impl) <- c('id',  'cochl_impl_date', 'cochl_impl_year', 
+                          'cochl_impl_code', 'cochl_impl_desc', 'cochl_impl_source', 
+                          'cochl_impl_data_provider', 'cochl_impl')
 cochl_impl$cochl_impl_nodate <- 0; cochl_impl$cochl_impl_nodate[is.na(cochl_impl$cochl_impl_date)] <- 1
 
-ha_cessation <- filter(diagnoses, diag == 'ha_cessation'); ha_cessation <- distinct(ha_cessation, id, .keep_all = TRUE)
-ha_cessation <- subset(ha_cessation, select = c(id, diag_date, diag_year, diag_code, diag_desc, diag_source, diag_data_provider))
+ha_cessation <- filter(diagnoses, diag == 'ha_cessation')
+ha_cessation <- distinct(ha_cessation, id, .keep_all = TRUE)
+ha_cessation <- subset(ha_cessation, select = c(id, diag_date, diag_year, diag_code, 
+                                                diag_desc, diag_source, diag_data_provider))
 
 if (nrow(ha_cessation) > 0){ # it throws error if none were found
   ha_cessation$ha_cessation <- 1
-  colnames(ha_cessation) <- c('id',  'ha_cessation_date', 'ha_cessation_year', 'ha_cessation_code', 'ha_cessation_desc', 
-                              'ha_cessation_source', 'ha_cessation_data_provider', 'ha_cessation')
-  ha_cessation$ha_cessation_nodate <- 0; ha_cessation$ha_cessation_nodate[is.na(ha_cessation$ha_cessation_date)] <- 1
+  colnames(ha_cessation) <- c('id',  'ha_cessation_date', 'ha_cessation_year', 
+                              'ha_cessation_code', 'ha_cessation_desc', 
+                              'ha_cessation_source', 'ha_cessation_data_provider', 
+                              'ha_cessation')
+  ha_cessation$ha_cessation_nodate <- 0
+  ha_cessation$ha_cessation_nodate[is.na(ha_cessation$ha_cessation_date)] <- 1
 } else {
-  colnames(ha_cessation) <- c('id',  'ha_cessation_date', 'ha_cessation_year', 'ha_cessation_code', 'ha_cessation_desc', 
+  colnames(ha_cessation) <- c('id',  'ha_cessation_date', 'ha_cessation_year', 
+                              'ha_cessation_code', 'ha_cessation_desc', 
                               'ha_cessation_source', 'ha_cessation_data_provider')
 }
   
@@ -209,8 +245,10 @@ saveRDS(hear, file = 'hearing_masterfile.rds')
 # default is 0; both hearing loss questions results in a hearing-loss coding (1); all other combinations of responses
 # are NA as previously done in 10.1016/j.ajhg.2019.09.008
 hear$hear_dif_both_0 <- rowSums(hear[ , c('hear_dif_0', 'hear_difn_0')], na.rm = TRUE)
-hear$hear_dif_both_0[is.na(hear$hear_dif_0) & is.na(hear$hear_difn_0)] <- NA # NA if both of them are NA
-hear$hear_dif_both_0[is.na(hear$hear_dif_0) & hear$hear_difn_0 == 1] <- NA # NA if one of them is 1 and the other one is NA (because they would be classified as having hearing loss if the other one was 1)
+# NA if both of them are NA
+hear$hear_dif_both_0[is.na(hear$hear_dif_0) & is.na(hear$hear_difn_0)] <- NA
+# NA if one of them is 1 and the other one is NA (because they would be classified as having hearing loss if the other one was 1)
+hear$hear_dif_both_0[is.na(hear$hear_dif_0) & hear$hear_difn_0 == 1] <- NA 
 hear$hear_dif_both_0[hear$hear_dif_0 == 1 & is.na(hear$hear_difn_0)] <- NA
 
 hear$hear_dif_both_1 <- rowSums(hear[ , c('hear_dif_1', 'hear_difn_1')], na.rm = TRUE)
@@ -231,8 +269,12 @@ hear$hear_dif_both_3[hear$hear_dif_3 == 1 & is.na(hear$hear_difn_3)] <- NA
 # add the diagnoses identified by UKB 'first occurrences ID fields' but unidentified by my search of the EHR; get earliest of both UKB dates
 hear$hear_loss_a <- 0; hear$hear_loss_a[!is.na(hear$date_hear_loss_a)] <- 1
 hear$hear_loss_b <- 0; hear$hear_loss_b[!is.na(hear$date_hear_loss_b)] <- 1
-hear$date_hear_loss_a[as.character(hear$date_hear_loss_a) %in% c('1900-01-01', '1901-01-01', '2037-07-07', '1902-02-02', '1903-03-03')] <- NA # invalid dates to NA
-hear$date_hear_loss_b[as.character(hear$date_hear_loss_b) %in% c('1900-01-01', '1901-01-01', '2037-07-07', '1902-02-02', '1903-03-03')] <- NA
+hear$date_hear_loss_a[as.character(hear$date_hear_loss_a) %in% 
+                        c('1900-01-01', '1901-01-01', '2037-07-07', 
+                          '1902-02-02', '1903-03-03')] <- NA # invalid dates to NA
+hear$date_hear_loss_b[as.character(hear$date_hear_loss_b) %in% 
+                        c('1900-01-01', '1901-01-01', '2037-07-07', 
+                          '1902-02-02', '1903-03-03')] <- NA
 hear$date_hear_loss_a <- as.Date(hear$date_hear_loss_a, format = '%Y-%m-%d')
 hear$date_hear_loss_b <- as.Date(hear$date_hear_loss_b, format = '%Y-%m-%d')
 hear$hear_loss_a_nodate[hear$hear_loss_a == 1] <- 0 # create 'nodate' variable that indicates lack of date of diagnosis
@@ -302,29 +344,44 @@ hear$date_hear_loss_3[((hear$hear_dif_both_3 == 2 | hear$hear_dif_both_3 == 99) 
 hear$date_hear_loss_3 <- as.Date(hear$date_hear_loss_3)
 
 # find earliest hearing loss date among all sources
-hear <- transform(hear, date_hear_loss_any = pmin(date_hear_loss_0, date_hear_loss_1, date_hear_loss_2, date_hear_loss_3,
-                                                  hear_loss_date, date_hear_loss_ab, na.rm = TRUE)) 
+hear <- transform(hear, date_hear_loss_any = 
+                    pmin(date_hear_loss_0, date_hear_loss_1, date_hear_loss_2, 
+                         date_hear_loss_3, hear_loss_date, date_hear_loss_ab, na.rm = TRUE)) 
 
 
-# determine source of earliest hearing loss record; a single participant may have several sources of hearing loss for the same date
-# (e.g., they might have indicated so via self-report and have been 'diagnosed' with the SRT); we will not be saving all those sources,
-# but will be prioritising the most objective ones - EHR overwrites SRT overwrites self-report
-hear$hear_loss_origin[hear$date_hear_loss_0 == hear$date_hear_loss_any | hear$date_hear_loss_1 == hear$date_hear_loss_any | # check for self-report
-                        hear$date_hear_loss_2 == hear$date_hear_loss_any | hear$date_hear_loss_3 == hear$date_hear_loss_any] <- 'self_report'
-hear$hear_loss_origin[(hear$date_hear_loss_0 == hear$date_hear_loss_any & hear$srt_min_0 >-5.5) | # check for SRT-based 'diagnosis'
-                        (hear$date_hear_loss_1 == hear$date_hear_loss_any & hear$srt_min_1 >-5.5) |
-                        (hear$date_hear_loss_2 == hear$date_hear_loss_any & hear$srt_min_2 >-5.5) |
-                        (hear$date_hear_loss_3 == hear$date_hear_loss_any & hear$srt_min_3 >-5.5)] <- 'srt'
-hear$hear_loss_origin[hear$hear_loss_date == hear$date_hear_loss_any & !is.na(hear$hear_loss_date)] <- # check for result of our EHR search
-  hear$hear_loss_source[hear$hear_loss_date == hear$date_hear_loss_any & !is.na(hear$hear_loss_date)]
-hear$hear_loss_origin[hear$date_hear_loss_ab == hear$date_hear_loss_any & !is.na(hear$date_hear_loss_ab)] <- # check for first occurrences in UKB 
-  hear$source_hear_loss_ab[hear$date_hear_loss_ab == hear$date_hear_loss_any & !is.na(hear$date_hear_loss_ab)]
+# determine source of earliest hearing loss record; a single participant 
+# may have several sources of hearing loss for the same date (e.g., they might 
+# have indicated so via self-report and have been 'diagnosed' with the SRT); 
+# we will not be saving all those sources, but will be prioritising 
+# the most objective ones - EHR overwrites SRT overwrites self-report
+hear$hear_loss_origin[hear$date_hear_loss_0 == hear$date_hear_loss_any | 
+                        hear$date_hear_loss_1 == hear$date_hear_loss_any | # check for self-report
+                        hear$date_hear_loss_2 == hear$date_hear_loss_any | 
+                        hear$date_hear_loss_3 == hear$date_hear_loss_any] <- 'self_report'
+hear$hear_loss_origin[(hear$date_hear_loss_0 == hear$date_hear_loss_any & 
+                         hear$srt_min_0 >-5.5) | # check for SRT-based 'diagnosis'
+                        (hear$date_hear_loss_1 == hear$date_hear_loss_any & 
+                           hear$srt_min_1 >-5.5) |
+                        (hear$date_hear_loss_2 == hear$date_hear_loss_any & 
+                           hear$srt_min_2 >-5.5) |
+                        (hear$date_hear_loss_3 == hear$date_hear_loss_any & 
+                           hear$srt_min_3 >-5.5)] <- 'srt'
+hear$hear_loss_origin[hear$hear_loss_date == hear$date_hear_loss_any & 
+                        !is.na(hear$hear_loss_date)] <- # check for result of our EHR search
+  hear$hear_loss_source[hear$hear_loss_date == hear$date_hear_loss_any & 
+                          !is.na(hear$hear_loss_date)]
+hear$hear_loss_origin[hear$date_hear_loss_ab == hear$date_hear_loss_any & 
+                        !is.na(hear$date_hear_loss_ab)] <- # check for first occurrences in UKB 
+  hear$source_hear_loss_ab[hear$date_hear_loss_ab == hear$date_hear_loss_any & 
+                             !is.na(hear$date_hear_loss_ab)]
 
 # harmonise coding from different sources
 hear$hear_loss_origin[hear$hear_loss_origin == '30' | hear$hear_loss_origin == '31' |
-                        hear$hear_loss_origin == 'read2' | hear$hear_loss_origin == 'read3'] <- 'GP'
+                        hear$hear_loss_origin == 'read2' | 
+                        hear$hear_loss_origin == 'read3'] <- 'GP'
 hear$hear_loss_origin[hear$hear_loss_origin == '40' | hear$hear_loss_origin == '41' |
-                        hear$hear_loss_origin == 'icd9' | hear$hear_loss_origin == 'icd10'] <- 'inpatient'
+                        hear$hear_loss_origin == 'icd9' | 
+                        hear$hear_loss_origin == 'icd10'] <- 'inpatient'
 
 # simple one that doesn't distinguish between GP and hospital
 hear$hear_loss_origin_simple <- hear$hear_loss_origin
@@ -332,41 +389,56 @@ hear$hear_loss_origin_simple[hear$hear_loss_origin %in% c('GP', 'inpatient')] <-
 
 
 # earliest date of hearing aid (analogous to above process for hearing loss)
-hear$date_hear_aid_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)] <- hear$date_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)]
-hear$date_hear_aid_1[hear$hear_aid_1 == 1 & !is.na(hear$hear_aid_1)] <- hear$date_1[hear$hear_aid_1 == 1 & !is.na(hear$hear_aid_1)]
-hear$date_hear_aid_2[hear$hear_aid_2 == 1 & !is.na(hear$hear_aid_2)] <- hear$date_2[hear$hear_aid_2 == 1 & !is.na(hear$hear_aid_2)]
-hear$date_hear_aid_3[hear$hear_aid_3 == 1 & !is.na(hear$hear_aid_3)] <- hear$date_3[hear$hear_aid_3 == 1 & !is.na(hear$hear_aid_3)]
+hear$date_hear_aid_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)] <- 
+  hear$date_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)]
+hear$date_hear_aid_1[hear$hear_aid_1 == 1 & !is.na(hear$hear_aid_1)] <- 
+  hear$date_1[hear$hear_aid_1 == 1 & !is.na(hear$hear_aid_1)]
+hear$date_hear_aid_2[hear$hear_aid_2 == 1 & !is.na(hear$hear_aid_2)] <- 
+  hear$date_2[hear$hear_aid_2 == 1 & !is.na(hear$hear_aid_2)]
+hear$date_hear_aid_3[hear$hear_aid_3 == 1 & !is.na(hear$hear_aid_3)] <- 
+  hear$date_3[hear$hear_aid_3 == 1 & !is.na(hear$hear_aid_3)]
 hear$date_hear_aid_0 <- as.Date(hear$date_hear_aid_0)
 hear$date_hear_aid_1 <- as.Date(hear$date_hear_aid_1)
 hear$date_hear_aid_2 <- as.Date(hear$date_hear_aid_2)
 hear$date_hear_aid_3 <- as.Date(hear$date_hear_aid_3)
 
 # earliest record of hearing aid
-hear <- transform(hear, date_hear_aid_any = pmin(date_hear_aid_0, date_hear_aid_1, date_hear_aid_2, date_hear_aid_3, 
+hear <- transform(hear, date_hear_aid_any = pmin(date_hear_aid_0, date_hear_aid_1, 
+                                                 date_hear_aid_2, date_hear_aid_3, 
                                                  hear_aid_date, na.rm = TRUE))
 hear$hear_aid_any <- 0
 hear$hear_aid_any[!is.na(hear$date_hear_aid_any)] <- 1
 
 
 # determine source of earliest hearing aid record
-hear$hear_aid_origin[hear$date_hear_aid_0 == hear$date_hear_aid_any | hear$date_hear_aid_1 == hear$date_hear_aid_any | # check for self report
-                       hear$date_hear_aid_2 == hear$date_hear_aid_any | hear$date_hear_aid_3 == hear$date_hear_aid_any] <- 'self_report'
-hear$hear_aid_origin[hear$date_hear_aid_any == hear$hear_aid_date & !is.na(hear$date_hear_aid_any) & # check for result of our EHR search
+hear$hear_aid_origin[hear$date_hear_aid_0 == hear$date_hear_aid_any | 
+                       hear$date_hear_aid_1 == hear$date_hear_aid_any | # check for self report
+                       hear$date_hear_aid_2 == hear$date_hear_aid_any | 
+                       hear$date_hear_aid_3 == hear$date_hear_aid_any] <- 'self_report'
+hear$hear_aid_origin[hear$date_hear_aid_any == hear$hear_aid_date & 
+                       !is.na(hear$date_hear_aid_any) & # check for result of our EHR search
                        !is.na(hear$hear_aid_date)] <- 'EHR'
 
 
 # same for cochlear implant
-hear$date_cochl_impl_0[hear$cochl_impl_0 == 1 & !is.na(hear$cochl_impl_0)] <- hear$date_0[hear$cochl_impl_0 == 1 & !is.na(hear$cochl_impl_0)]
-hear$date_cochl_impl_1[hear$cochl_impl_1 == 1 & !is.na(hear$cochl_impl_1)] <- hear$date_1[hear$cochl_impl_1 == 1 & !is.na(hear$cochl_impl_1)]
-hear$date_cochl_impl_2[hear$cochl_impl_2 == 1 & !is.na(hear$cochl_impl_2)] <- hear$date_2[hear$cochl_impl_2 == 1 & !is.na(hear$cochl_impl_2)]
-hear$date_cochl_impl_3[hear$cochl_impl_3 == 1 & !is.na(hear$cochl_impl_3)] <- hear$date_3[hear$cochl_impl_3 == 1 & !is.na(hear$cochl_impl_3)]
+hear$date_cochl_impl_0[hear$cochl_impl_0 == 1 & !is.na(hear$cochl_impl_0)] <-
+  hear$date_0[hear$cochl_impl_0 == 1 & !is.na(hear$cochl_impl_0)]
+hear$date_cochl_impl_1[hear$cochl_impl_1 == 1 & !is.na(hear$cochl_impl_1)] <- 
+  hear$date_1[hear$cochl_impl_1 == 1 & !is.na(hear$cochl_impl_1)]
+hear$date_cochl_impl_2[hear$cochl_impl_2 == 1 & !is.na(hear$cochl_impl_2)] <- 
+  hear$date_2[hear$cochl_impl_2 == 1 & !is.na(hear$cochl_impl_2)]
+hear$date_cochl_impl_3[hear$cochl_impl_3 == 1 & !is.na(hear$cochl_impl_3)] <- 
+  hear$date_3[hear$cochl_impl_3 == 1 & !is.na(hear$cochl_impl_3)]
 hear$date_cochl_impl_0 <- as.Date(hear$date_cochl_impl_0)
 hear$date_cochl_impl_1 <- as.Date(hear$date_cochl_impl_1)
 hear$date_cochl_impl_2 <- as.Date(hear$date_cochl_impl_2)
 hear$date_cochl_impl_3 <- as.Date(hear$date_cochl_impl_3)
 
-hear <- transform(hear, date_cochl_impl_any = pmin(date_cochl_impl_0, date_cochl_impl_1, date_cochl_impl_2, date_cochl_impl_3, 
-                                                 cochl_impl_date, na.rm = TRUE))
+hear <- transform(hear, date_cochl_impl_any = pmin(date_cochl_impl_0, 
+                                                   date_cochl_impl_1, 
+                                                   date_cochl_impl_2, 
+                                                   date_cochl_impl_3, 
+                                                   cochl_impl_date, na.rm = TRUE))
 hear$cochl_impl_any <- 0
 hear$cochl_impl_any[!is.na(hear$date_cochl_impl_any)] <- 1
 
