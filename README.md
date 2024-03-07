@@ -31,7 +31,9 @@ Field ID | Description
 `42038` | GP prescription records ("gp_registrations.txt")
 `42039` | GP prescription records ("gp_scripts.csv")
 `42040` | GP clinical event records ("gp_clinical.txt")
-*only even-numbered field IDs
+
+*_only even-numbered field IDs_
+
 
 Additionally, the following files are required:
 - "participant_opt_out.csv": a table with one column `id` that contains as observations the UK Biobank participant IDs for participants that have opted out of the study. This list will change over time and researchers with access to UK Biobank data will be regularly informed of additions to the list.
