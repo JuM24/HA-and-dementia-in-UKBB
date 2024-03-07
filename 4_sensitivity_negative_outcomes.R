@@ -16,7 +16,7 @@ source('0_helper_functions.R')
 hear <- readRDS('hearing_masterfile_prepped.rds')
 
 # file with censoring dates
-cens_dates <- readxl::read_excel('censoring dates.xlsx')
+cens_dates <- readxl::read_excel('censoring_dates.xlsx')
 cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
 
 # We are interested in only those participants that have hearing loss; thus, we remove participants without it.
