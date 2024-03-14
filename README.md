@@ -47,6 +47,6 @@ Additionally, the following files are required:
   install.packages('renv')
   renv::restore()
 ```
-`renv::restore()` might need to be run again to install to correct versions of the required packages.
+`renv::restore()` might need to be run again to install the correct versions of the required packages.
 
 3. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
