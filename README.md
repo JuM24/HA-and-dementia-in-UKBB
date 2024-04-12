@@ -53,13 +53,22 @@ Additionally, the following files are required:
 - "participant_opt_out.csv": a table with one column `id` that contains as observations the UK Biobank participant IDs for participants that have opted out of the study. This list will change over time and researchers with access to UK Biobank data will be regularly informed of additions to the list.
 
 
-## Running the code
-1. Download the contents of this repository and extract them to the folder that will contain all the code, datasets, and variables derived in the process of data preparation.
-2. Install R version 4.3.2 and run the following (choose "activate the project and use the project library" when prompted):
+## The coding environment
+1. Download the contents of this repository and extract them to the working directory.
+2. Install R version 4.3.2 (https://cran.rstudio.com/bin/windows/base/old/4.3.2/) and Rstudio (https://www.rstudio.com/categories/rstudio-ide/), and run the following (choose "activate the project and use the project library" when prompted):
 ```R
   install.packages('renv')
   renv::restore()
 ```
-`renv::restore()` might need to be run again to install the correct versions of the required packages.
+- `renv::restore()` might need to be run again to install the correct versions of the required packages.
+3. Install Python via the Anaconda distribution (https://www.anaconda.com/download/success) and perform the following steps:
+- (a) Launch the Anaconda prompt/terminal and navigate the the working directory.
+- (b) Run `conda env create -f environment.yml` to setup the correct Python environment.
+- (c) Run `conda activate pseudoscales.env` to activate the Python environment.
+- The project can be discontinued and resumed later, but upon newly launching the Anaconda terminal, always repeat steps (a) and (c).
+
+## Running the code
+
+
 
 3. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
