@@ -1,0 +1,190 @@
+generic,name_1,name_2,name_3,number
+aclidinium bromide/formoterol,aclidinium/formoterol,,,2
+alendronic acid/colecalciferol,alendronic/colecalciferol,alendronic/d3,alendronic/vitamin d,2
+amiloride/bumetanide,amiloride/bumetanide,,,2
+amiloride/timolol/hydrochlorothiazide,amiloride/timolol/hydrochlorothiazide,,,3
+amlodipine/olmesartan/hydrochlorothiazide,amlodipine/olmesartan/hydrochlorothiazide,,,3
+amlodipine/valsartan,amlodipine/valsartan,,,2
+aspirin/codeine,aspirin/codeine,,,2
+aspirin/dipyridamole,aspirin/dipyridamole,,,2
+aspirin/metoclopramide,aspirin/metoclopramide,,,2
+atenolol/nifedipine,atenolol/nifedipine,,,2
+atovaquone/proguanil,atovaquone/proguanil,,,2
+azelastine/fluticasone,azelastine/fluticasone,,,2
+beclometasone/formoterol,beclometasone/formoterol,,,2
+beclometasone/formoterol/glycopyrronium,beclometasone/formoterol/glycopyrronium,,,3
+bendroflumethiazide/timolol,bendroflumethiazide/timolol,,,2
+betamethasone/clioquinol,betamethasone/clioquinol,,,2
+betamethasone/clotrimazole,betamethasone/clotrimazole,,,2
+betamethasone/fusidic acid,betamethasone/fusidic,,,2
+betamethasone/neomycin,betamethasone/neomycin,,,2
+betamethasone/salicylic acid,betamethasone/salicylic,,,2
+bimatoprost/timolol,bimatoprost/timolol,,,2
+brimonidine/brinzolamide,brimonidine/brinzolamide,,,2
+brimonidine/timolol,brimonidine/timolol,,,2
+brinzolamide/timolol,brinzolamide/timolol,,,2
+budesonide/formoterol,budesonide/formoterol,,,2
+budesonide/formoterol/glycopyrronium,budesonide/formoterol/glycopyrronium,,,3
+buprenorphine/naloxone,buprenorphine/naloxone,,,2
+calcium carbonate/calcium lactate,carbonate/lactate,,,2
+chlorhexidine/cetrimide,chlorhexidine/cetrimide,,,2
+chlorhexidine/isopropyl,chlorhexidine/isopropyl,,,2
+chlorhexidine/lidocaine,chlorhexidine/lidocaine,,,2
+chlorhexidine/neomycin,chlorhexidine/neomycin,,,2
+chloroquine/proguanil,chloroquine/proguanil,,,2
+chlortalidone/triamterene,chlortalidone/triamterene,,,2
+cinchocaine/fluocortolone caproate/fluocortolone pivalate,cinchocaine/fluocortolone,,,2
+cinchocaine/hydrocortisone,cinchocaine/hydrocortisone,,,2
+cinchocaine/prednisolone,cinchocaine/prednisolone,,,2
+cinnarizine/dimenhydrinate,cinnarizine/dimenhydrinate,,,2
+ciprofloxacin/dexamethasone,ciprofloxacin/dexamethasone,,,2
+ciprofloxacin/fluocinolone,ciprofloxacin/fluocinolone,,,2
+clindamycin/benzoyl peroxide,clindamycin/benzoyl,,,2
+clobetasone butyrate/nystatin/oxytetracycline,clobetasone/nystatin/oxytetracycline,,,3
+clotrimazole/hydrocortisone,clotrimazole/hydrocortisone,,,2
+co-amilozide,hydrochlorothiazide/amiloride,co-amilozide,,2
+co-beneldopa,benserazide/levodopa,co-beneldopa,,2
+co-careldopa,carbidopa/levodopa,co-careldopa,,2
+co-codamol,paracetamol/codeine,co-codamol,,2
+co-dydramol,dihydrocodein/paracetam,co-dydramol,,2
+colecalciferol/calcium,colecalciferol/calcium,d3/calcium,vitamin d/calcium,2
+colecalciferol/calcium/risedronate,colecalciferol/calcium/risedronate,d3/calcium/risedronate,vitamin d/calcium/risedronate,3
+conjugated oestrogens/medroxyprogesterone,oestrogen/medroxyprogesterone,,,2
+co-phenotrope,atropine/diphenoxylate,co-phenotrope,,2
+co-proxamol,dextropropoxyphene/paracetamol,co-proxamol,,2
+co-tenidone,atenolol/chlortalidone,co-tenidone,,2
+dapagliflozin/metformin,dapagliflozin/metformin,,,2
+dapagliflozin/saxagliptin,dapagliflozin/saxagliptin,,,2
+dexamethasone/glacial acetic acid/neomycin,dexamethasone/acetic/neomycin,,,3
+dexamethasone/hypromellose/neomycin/polymyxin B,dexamethasone/hypromellose/neomycin/polymyxin,,,4
+dexamethasone/levofloxacin,dexamethasone/levofloxacin,,,2
+diclofenac/misoprostol,diclofenac/misoprostol,,,2
+dicycloverine/aluminium hydroxide/magnesium oxide/simeticone,dicycloverine/aluminium/magnesium/simeticone,,,4
+doxylamine/piridoxine,doxylamine/piridoxine,,,2
+dutasteride/tamsulosin,dutasteride/tamsulosin,,,2
+enalapril/hydrochlorothiazide,enalapril/hydrochlorothiazide,,,2
+erythromycin/tretinoin,erythromycin/tretinoin,,,2
+erythromycin/zinc acetate,erythromycin/zinc,,,2
+esomeprazole/naproxen,esomeprazole/naproxen,,,2
+estradiol/dydrogesterone,estradiol/dydrogesterone,,,2
+estradiol/nomegestrol,estradiol/nomegestrol,,,2
+estradiol/norethisterone,estradiol/norethisterone,,,2
+estradiol/progesterone,estradiol/progesterone,,,2
+ethinylestradiol/levonorgestrel,ethinylestradiol/levonorgestrel,,,2
+ezetimibe/bempedoic acid,ezetimibe/bempedoic,,,2
+ezetimibe/simvastatin,ezetimibe/simvastatin,,,2
+felodipine/ramipril,felodipine/ramipril,,,2
+fenofibrate/simvastatin,fenofibrate/simvastatin,,,2
+fentanyl/bupivacaine,fentanyl/bupivacaine,,,2
+ferrous fumarate/folic acid,fumarate/folic,,,2
+ferrous sulfate/ascorbic acid,sulfate/ascorbic,,,2
+ferrous sulfate/folic acid,sulfate/folic,,,2
+fluticasone/formoterol,fluticasone/formoterol,,,2
+fluticasone/salmeterol,fluticasone/salmeterol,,,2
+fluticasone/vilanterol,fluticasone/vilanterol,,,2
+fluticasone/vilanterol/umeclidinium,fluticasone/vilanterol/umeclidinium,,,3
+furosemide/spironolactone,furosemide/spironolactone,,,2
+furosemide/triamterene,furosemide/triamterene,,,2
+fusidic acid/hydrocortisone,fusidic acid/hydrocortisone,,,2
+glycerol/magnesium sulfate/phenol,glycerol/magnesium/phenol,,,3
+glycopyrronium/formoterol,glycopyrronium/formoterol,,,2
+hydrocortisone/benzalkonium chloride/dimeticone/nystatin,hydrocortisone/benzalkonium/dimeticone/nystatin,,,4
+hydrocortisone/chlorhexidine/nystatin,hydrocortisone/chlorhexidine/nystatin,,,3
+hydrocortisone/miconazole,hydrocortisone/miconazole,,,2
+hypromellose/dextran 70,hypromellose/dextran,,,2
+indapamide/perindopril,indapamide/perindopril,,,2
+insulin/liraglutide,insulin/liraglutide,,,2
+ipratropium/salbutamol,ipratropium/salbutamol,,,2
+irbesartan/hydrochlorothiazide,irbesartan/hydrochlorothiazide,,,2
+ispaghula/mebeverine,ispaghula/mebeverine,,,2
+lidocaine/adrenaline,lidocaine/adren,,,2
+lidocaine/cetrimide,lidocaine/cetrimide,,,2
+lidocaine/phenylephrine,lidocaine/phenylephrine,,,2
+lidocaine/prilocaine,lidocaine/prilocaine,,,2
+linagliptin/empagliflozin,linagliptin/empagliflozin,,,2
+linagliptin/metformin,linagliptin/metformin,,,2
+lisinopril/hydrochlorothiazide,lisinopril/hydrochlorothiazide,,,2
+loperamide/simeticone,loperamide/simeticone,,,2
+losartan/hydrochlorothiazide,losartan/hydrochlorothiazide,,,2
+macrogol/anhydrous sodium sulfate/ascorbic acid/potassium chloride/sodium ascorbate/sodium chloride,macrogol/sodium/ascorbic/potassium/,,,4
+macrogol/anhydrous sodium sulfate/potassium chloride/sodium bicarbonate/sodium chloride,macrogol/sulfate/potassium,,,3
+macrogol/potassium chloride/sodium bicarbonate/sodium chloride,macrogol/potassium/sodium,,,3
+medroxyprogesterone/estradiol,medroxyprogesterone/estradiol,,,2
+metformin/alogliptin,metformin/alogliptin,,,2
+metformin/canagliflozin,metformin/canagliflozin,,,2
+metformin/empagliflozin,metformin/empagliflozin,,,2
+metformin/pioglitazone,metformin/pioglitazone,,,2
+metformin/sitagliptin,metformin/sitagliptin,,,2
+metformin/vildagliptin,metformin/vildagliptin,,,2
+methylprednisolone/lidocaine,methylprednisolone/lidocaine,,,2
+mineral oil/white petrolatum,mineral/petrolatum,,,2
+mometasone/glycopyrronium/indacaterol,mometasone/glycopyrronium/indacaterol,,,3
+mometasone/indacaterol,mometasone/indacaterol,,,2
+mometasone/olopatadine,mometasone/olopatadine,,,2
+neomycin/clobetasol/nystatin,neomycin/clobetasol/nystatin,,,3
+neomycin/fluocinolone acetonide,neomycin/fluocinolone,,,2
+norethisterone/estradiol/relugolix,norethisterone/estradiol/relugolix,,,3
+norethisterone/mestranol,norethisterone/mestranol,,,2
+nystatin/chlorhexidine,nystatin/chlorhexidine,,,2
+olmesartan/amlodipine,olmesartan/amlodipine,,,2
+olmesartan/hydrochlorothiazide,olmesartan/hydrochlorothiazide,,,2
+oxycodone/naloxone,oxycodone/naloxone,,,2
+oxytetracycline/hydrocortisone,oxytetracycline/hydrocortisone,,,2
+paracetamol/buclizine/codeine,paracetamol/buclizine/codeine,,,3
+paracetamol/codeine/caffeine,paracetamol/codeine/caffeine,,,3
+paracetamol/isometheptene,paracetamol/isometheptene,,,2
+pyridoxine/doxylamine,pyridoxine/doxylamine,,,2
+quinapril/hydrochlorothiazide,quinapril/hydrochlorothiazide,,,2
+salicylic acid/benzoic acid,salicylic/benzoic,,,2
+salicylic acid/coal tar,salicylic/coal,,,2
+salicylic acid/coal tar/dithranol,salicylic/coal/dithranol,,,3
+salicylic acid/coal tar/precipitated sulfur,salicylic/coal/sulfur,,,3
+salicylic acid/dithranol/zinc oxide,salicylic/dithranol/zinc,,,3
+salicylic acid/fluorouracil,salicylic/fluorouracil,,,2
+salicylic acid/lactic acid,salicylic/lactic,,,2
+salicylic acid/rhubarb extract,salicylic/rhubarb,,,2
+salicylic acid/zinc oxide,salicylic/zinc,,,2
+sodium alginate/calcium carbonate/sodium bicarbonate,sodium/calcium,,,2
+sodium alginate/potassium bicarbonate,sodium/potassium,,,2
+sodium bicarbonate/sodium acid phosphate,bicarbonate/phosphate,,,2
+sodium bicarbonate/sodium chloride,bicarbonate/chloride,,,2
+sodium hyaluronate/trehalose,sodium/trehalose,,,2
+sodium picosulfate/magnesium citrate,sodium/magnesium,,,2
+solifencacin/tamsulosin,solifencacin/tamsulosin,,,2
+tamsulosin/dutasteride,tamsulosin/dutasteride,,,2
+telmisartan/hydrochlorothiazide,telmisartan/hydrochlorothiazide,,,2
+timolol/amiloride/hydrochlorothiazide,timolol/amiloride/hydrochlorothiazide,,,3
+tiotropium/olodaterol,tiotropium/olodaterol,,,2
+tobramycin/dexamethasone,tobramycin/dexamethasone,,,2
+tramadol/dexketoprofen,tramadol/dexketoprofen,,,2
+tramadol/paracetamol,tramadol/paracetamol,,,2
+travoprost/timolol,travoprost/timolol,,,2
+valsartan/hydrochlorothiazide,valsartan/hydrochlorothiazide,,,2
+valsartan/sacubitril,valsartan/sacubitril,,,2
+xylometazoline/antazoline,xylomet/antazol,,,2
+co-trimoxazole,sulfamet/trimet,,,2
+naltrexone/bupropion,naltrexone/bupropion,,,2
+phenylephrine/tropicamide,phenyleph/tropicam,,,2
+phenylephrine/tropicamide/lidocaine,phenyleph/tropicam/lido,,,3
+umeclidinium/vilanterol,umeclid/vilant,,,2
+paracetamol/metoclopramide,paracetamol/metoclopramid,,,2
+latanoprost/timolol,latanoprost/timolol,,,2
+ethinylestradiol/norethisterone,ethinylestradiol/norethisteron,,,2
+gentamicin/hydrocortisone,gentamicin/hydrocortison,,,2
+ethinylestradiol/desogestrel,ethinylestradiol/desogestrel,,,2
+coal tar/coconut oil/salicylic acid,coal/coconut/salicylic,tar/coconut/salicylic,,3
+senna/ispaghula,senna/ispaghula,sena/ispaghula,,3
+ethinylestradiol/norelgestromin,ethinylestradiol/norelgestromin,,,2
+levodopa/carbidopa/entacapone,levodop/carbidop/entacapon,,,3
+co-fluampicil,ampicillin/flucloxacillin,co-fluampicil,,2
+calcipotriol/betamethasone,calcipotriol/betamethason,,,2
+hydrocortisone/lidocaine,hydrocortison/lidocain,,,2
+hydrocortisone/neomycin/polymyxin B sulfate,hydrocortison/neomycin/polymyxin,,,3
+flumetasone pivalate/clioquinol,flumetason/clioquinol,,,2
+benzyl benzoate/bismuth oxide/bismuth subgallate/hydrocortisone acetate/peru balsam/zinc oxide,benzyl/bismuth/hydrocortisone/peru/zinc,,,5
+dorzolamide/timolol,dorzolamid/timolol,,,2
+ethinylestradiol/etonogestrel,ethinylestradiol/etonogestrel,,,2
+ethinylestradiol/norgestimate,ethinylestradiol/norgestimat,,,2
+dexamethasone/framycetin/gramicidin,dexamethason/framycetin/gramicidin,,,3
+ethinylestradiol/drospirenone,ethinylestradiol/drospirenon,,,2
+glycopyrronium/indacaterol ,glycopyrronium/indacaterol ,,,2
