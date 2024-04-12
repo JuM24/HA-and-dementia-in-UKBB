@@ -49,10 +49,8 @@ Field ID | Description
 
 *_only even-numbered field IDs_
 
-
 Additionally, the following files are required:
 - "participant_opt_out.csv": a table with one column `id` that contains as observations the UK Biobank participant IDs for participants that have opted out of the study. This list will change over time and researchers with access to UK Biobank data will be regularly informed of additions to the list.
-- "censoring_dates.xlsx": a long-format table with three columns: `disorder`, `data_provider`, and `date`, indicating the name of the disorder as used in the code ('dementia', 'flu', 'heart', 'hepatic', 'respiratory', 'asthma', 'skin_dis', and 'infect'), the provider of the data to UK Biobank, and the date of censoring. This repository contains "censoring_dates.xlsx" for the release of UK Biobank used in our analyses. The release that you use may not be the same, so you might need to check these dates and correct/replace them if necessary.
 
 
 ## Running the code
