@@ -55,7 +55,7 @@ Additionally, the following files are required:
 
 ## The coding environment
 1. Download the contents of this repository and extract them to the working directory.
-2. Install R version 4.3.2 (https://cran.rstudio.com/bin/windows/base/old/4.3.2/) and Rstudio (https://www.rstudio.com/categories/rstudio-ide/), and run the following (choose "activate the project and use the project library" when prompted):
+2. Install R version 4.3.2 (https://cran.rstudio.com/bin/windows/base/old/4.3.2/) and Rstudio ([https://www.rstudio.com/categories/rstudio-ide/](https://posit.co/products/open-source/rstudio/)), and run the following (choose "activate the project and use the project library" when prompted):
 ```R
   install.packages('renv')
   renv::restore()
