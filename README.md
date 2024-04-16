@@ -71,4 +71,4 @@ Additionally, the following files are required:
 
 
 
-3. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
+1. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
