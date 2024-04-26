@@ -25,7 +25,8 @@ ukb <- read.csv(file_name)
 # main raw data
 main_vars <- ukb %>% 
   select(c(eid, starts_with(
-    c('X52.', 'X34.', 'X53.','X31.', 'X6138.', 'X22189.', # demographic
+    # demographic
+    c('X52.', 'X34.', 'X53.','X31.', 'X6138.', 'X22189.', 'X21000.', 'X191.',
       'X42018.', # dementia
       # cognitive tests
       'X20016.', 'X20018.', 'X20023.', 'X399.', 'X6351.', 'X6373.', 'X23324.', 
@@ -46,6 +47,9 @@ main_vars <- ukb %>%
       'X131450.', 'X131452.', 'X131454.', 'X131456.',
       # heart disease
       'X131296.', 'X131298.', 'X131300.', 'X131302.', 'X131304.', 'X131306.',
+      # appendicitis
+      'X131604.', 'X131606.', 'X131608.',
+      'X4803.', # tinnitus
       'X42014.',     # asthma
       FO_skin_fields, # skin disorders
       FO_infect_fields, # infection disorders
