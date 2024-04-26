@@ -116,3 +116,16 @@ find_closest_non_missing_before_0 <- function(df, var_prefix, date_hear_loss_any
   
   return(df)
 }
+
+
+education_classify <- function(x){
+  if (any((x == 1 | x == 6) & !is.na(x), na.rm = TRUE)){
+    return(3)
+  } else if (any((x == 2 | x == 3 | x == 4 | x == 5) & !is.na(x), na.rm = TRUE)){
+    return(2)
+  } else if (any (x == -7  & !is.na(x), na.rm = TRUE)){
+    return(1)
+  } else {
+    return(NA)
+  }
+}
