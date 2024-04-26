@@ -76,7 +76,7 @@ colnames(inpatient)[colnames(inpatient) == 'diagnosis'] <- 'code'
 inpatient <- filter(inpatient, code %in% diagnosis_codes$code[diagnosis_codes$source == 'icd9'] | # keep only relevant diagnoses
                       code %in% diagnosis_codes$code[diagnosis_codes$source == 'icd10']) %>%
   # replace invalid dates with NAs
-  mutate(across(date, ~replace(., . %in% c('1900-01-01', '1901-01-01', 
+  mutate(across(date, ~ replace(., . %in% c('1900-01-01', '1901-01-01', 
                                            '1902-02-02', '1903-03-03', '2037-07-07'), NA))) 
 inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
 
@@ -90,16 +90,14 @@ gp_diagnoses <- filter(gp_diagnoses,
                        (read2 %in% diagnosis_codes$code[diagnosis_codes$source == 'read2']) | # keep only relevant diagnoses
                          (read3 %in% diagnosis_codes$code[diagnosis_codes$source == 'read3'])) %>%
   # replace invalid dates with NAs
-  mutate(across(date_primary, ~replace(., . %in% c('01/01/1900', '01/01/1901', 
+  mutate(across(date_primary, ~ replace(., . %in% c('01/01/1900', '01/01/1901', 
                                                    '02/02/1902', '03/03/1903', 
                                                    '07/07/2037'), NA))) 
 gp_diagnoses$date_primary <- as.Date(gp_diagnoses$date_primary, format = '%d/%m/%Y')
 gp_diagnoses$year <- as.numeric(format(as.Date(gp_diagnoses$date_primary), '%Y'))
 gp_diagnoses[gp_diagnoses == ''] <- NA
 
-# remove duplicate codes and match codes with descriptions
-inpatient <- inpatient %>% arrange(date)
-inpatient <- distinct(inpatient, id, code, version, .keep_all = TRUE)
+# match codes with descriptions
 for (d in c('icd9', 'icd10')){
   for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
     inpatient$description[inpatient$version == d & inpatient$code == diagnosis] <-
@@ -112,9 +110,6 @@ for (d in c('icd9', 'icd10')){
 }
 
 # repeat for primary care
-gp_diagnoses <- gp_diagnoses %>% arrange(date_primary)
-gp_diagnoses <- distinct(gp_diagnoses, id, read2, .keep_all = TRUE)
-gp_diagnoses <- distinct(gp_diagnoses, id, read3, .keep_all = TRUE)
 for (d in c('read2', 'read3')){
   for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
     gp_diagnoses$description[!is.na(gp_diagnoses[[d]]) & gp_diagnoses[[d]] == diagnosis] <- 
@@ -130,10 +125,17 @@ for (d in c('read2', 'read3')){
 write.csv(diagnosis_codes, 'hearing_codes_filled.csv')
 
 # combine inpatient and gp diagnoses and export
-read2 <- filter(gp_diagnoses, !is.na(read2)) # create two separate files for read2 and read3 code from the GP record
-read3 <- filter(gp_diagnoses, !is.na(read3))
-read2 <- subset(read2, select = -c(read3))
-read3 <- subset(read3, select = -c(read2))
+read2 <- gp_diagnoses %>%
+  # create two separate files for read2 and read3 code from the GP record
+  filter(!is.na(read2)) %>%
+  arrange(date_primary) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  select(-read3)
+read3 <- gp_diagnoses %>%
+  filter(!is.na(read3)) %>%
+  arrange(date_primary) %>%
+  distinct(id, .keep_all = TRUE) %>%
+  select(-read2)
 read2$diag_source <- 'read2'; read3$diag_source <- 'read3'
 colnames(read2) <- c('id', 'diag_data_provider', 'diag_date', 'diag_code', 
                      'diag_year', 'diag_desc', 'diag', 'diag_source')
@@ -148,24 +150,24 @@ inpatient$year <- as.numeric(format(as.Date(inpatient$date), '%Y'))
 inpatient$data_provider <- NA
 colnames(inpatient) <- c('id', 'diag_code', 'diag_date', 'diag_source', 'diag_desc', 
                          'diag', 'diag_year', 'diag_data_provider')
+# bind and keep earliest record per diagnosis type
 diagnoses <- rbind(gp_diagnoses,
                    subset(inpatient, select = c(id, diag, diag_date, diag_year, diag_code, 
-                                                diag_desc, diag_source, diag_data_provider)))
+                                                diag_desc, diag_source, diag_data_provider))) %>%
+  # remove duplicate diagnoses of the same type and check for multiple types for same participant
+  arrange(diag_date) %>%
+  distinct(id, diag, .keep_all = TRUE)
 
 # add column for congenital disorders
 diagnosis_codes <- subset(diagnosis_codes, select = c(code, congenital))
 colnames(diagnosis_codes)[colnames(diagnosis_codes) == 'code'] <- 'diag_code'
 diagnoses <- merge(diagnoses, diagnosis_codes, by = 'diag_code', all.x = TRUE)
 
-# remove duplicate diagnoses of the same type and check for multiple types for same participant
-diagnoses <- arrange(diagnoses, diag_date)
-diagnoses <- distinct(diagnoses, id, diag, .keep_all = TRUE)
-
-# separate into data frames of distinct diagnoses, remove duplicates, and bind again; 
+# separate into data frames of distinct diagnoses, rename columns; 
 # then merge with main data frame; tag the ones without dates (they are going to be removed later)
 # do this for hearing loss, hearing aid use, hearing aid use cessation, and cochlear implants
 hear_loss_diag <- filter(diagnoses, diag == 'hl')
-hear_loss_diag <- distinct(hear_loss_diag, id, .keep_all = TRUE) %>%
+hear_loss_diag <- hear_loss_diag %>%
   rename(hear_loss_code = diag_code, hear_loss_diag = diag, hear_loss_date = diag_date, 
          hear_loss_year = diag_year, hear_loss_desc = diag_desc,
          hear_loss_source = diag_source, hear_loss_data_provider = diag_data_provider)
@@ -173,29 +175,31 @@ hear_loss_diag$hear_loss <- 1
 hear_loss_diag$hear_loss_nodate <- 0
 hear_loss_diag$hear_loss_nodate[is.na(hear_loss_diag$hear_loss_date)] <- 1
 
-hear_aid <- filter(diagnoses, diag == 'ha')
-hear_aid <- distinct(hear_aid, id, .keep_all = TRUE)
-hear_aid <- subset(hear_aid, select = c(id, diag_date, diag_year, diag_code, 
-                                        diag_desc, diag_source, diag_data_provider))
+hear_aid <- diagnoses %>%
+  filter(diag == 'ha') %>%
+  select(c(id, diag_date, diag_year, diag_code, 
+           diag_desc, diag_source, diag_data_provider))
 hear_aid$hear_aid <- 1
 colnames(hear_aid) <- c('id',  'hear_aid_date', 'hear_aid_year', 'hear_aid_code', 'hear_aid_desc', 
                         'hear_aid_source', 'hear_aid_data_provider', 'hear_aid')
-hear_aid$hear_aid_nodate <- 0; hear_aid$hear_aid_nodate[is.na(hear_aid$hear_aid_date)] <- 1
+hear_aid$hear_aid_nodate <- 0
+hear_aid$hear_aid_nodate[is.na(hear_aid$hear_aid_date)] <- 1
 
-cochl_impl <- filter(diagnoses, diag == 'ci'); cochl_impl <- 
-  distinct(cochl_impl, id, .keep_all = TRUE)
-cochl_impl <- subset(cochl_impl, select = c(id, diag_date, diag_year, diag_code, 
-                                            diag_desc, diag_source, diag_data_provider))
+cochl_impl <- diagnoses %>%
+  filter(diag == 'ci') %>%
+  select(id, diag_date, diag_year, diag_code, 
+          diag_desc, diag_source, diag_data_provider)
 cochl_impl$cochl_impl <- 1
 colnames(cochl_impl) <- c('id',  'cochl_impl_date', 'cochl_impl_year', 
                           'cochl_impl_code', 'cochl_impl_desc', 'cochl_impl_source', 
                           'cochl_impl_data_provider', 'cochl_impl')
-cochl_impl$cochl_impl_nodate <- 0; cochl_impl$cochl_impl_nodate[is.na(cochl_impl$cochl_impl_date)] <- 1
+cochl_impl$cochl_impl_nodate <- 0
+cochl_impl$cochl_impl_nodate[is.na(cochl_impl$cochl_impl_date)] <- 1
 
-ha_cessation <- filter(diagnoses, diag == 'ha_cessation')
-ha_cessation <- distinct(ha_cessation, id, .keep_all = TRUE)
-ha_cessation <- subset(ha_cessation, select = c(id, diag_date, diag_year, diag_code, 
-                                                diag_desc, diag_source, diag_data_provider))
+ha_cessation <- diagnoses %>%
+  filter(diag == 'ha_cessation') %>%
+  select(id, diag_date, diag_year, diag_code, 
+         diag_desc, diag_source, diag_data_provider)
 
 if (nrow(ha_cessation) > 0){ # it throws error if none were found
   ha_cessation$ha_cessation <- 1
