@@ -25,9 +25,11 @@ dementia$dementia_date[dementia$dementia_date == as.Date('1900-01-01', format = 
 
 
 ## assessment dates, age at assessments and sex
-dems <- data_all %>% select(c(eid, starts_with(c('X31.', 'X53.', 'X34.', 'X52.'))))
+dems <- data_all %>% select(c(eid, starts_with(c('X31.', 'X53.', 'X34.', 
+                                                 'X52.'))))
 dems <- dems %>%
-  rename(sex = X31.0.0, date_0 = X53.0.0, date_1 = X53.1.0, date_2 = X53.2.0, date_3 = X53.3.0,
+  rename(sex = X31.0.0, date_0 = X53.0.0, date_1 = X53.1.0, 
+         date_2 = X53.2.0, date_3 = X53.3.0,
          birth_year = X34.0.0, birth_month = X52.0.0)
 dems$birth_year <- as.character(dems$birth_year); dems$birth_month <- 
   as.character(dems$birth_month)
@@ -44,34 +46,34 @@ dems <- dems %>%
   rename(id = eid)
 
 
+## ethnicity
+ethnicity <- data_all %>% 
+  select(c(eid, X21000.0.0)) %>%
+  rename(id = eid, ethnicity = X21000.0.0)
+ethnicity$ethnicity[ethnicity$ethnicity %in% c(1, 1001, 1002, 1003)] <- 1
+ethnicity$ethnicity[ethnicity$ethnicity %in% c(2, 2001, 2002, 2003, 2004)] <- 2
+ethnicity$ethnicity[ethnicity$ethnicity %in% c(3, 3001, 3002, 3003, 3004)] <- 3
+ethnicity$ethnicity[ethnicity$ethnicity %in% c(4, 4001, 4002, 4003)] <- 4
+ethnicity$ethnicity[ethnicity$ethnicity %in% c(-1, -3)] <- NA
+
+
+
 
 ## education
-# create subsets of the education frame for each assessment; change -7 to NA, and set to 1 if graduate degree present
+# create subsets of the education frame for each assessment; change -3 to NA;
+# distinguish higher, secondary/vocational, and none
+# 1,6: higher
+# 2,3,4,5: secondary/vocational
+# -7: none
 education <- data_all %>% select(eid, starts_with('X6138.')) %>% rename(id = eid)
-
-education[education == -3] <- NA
-
-education_0 <- education %>%
-  select(id, starts_with('X6138.0')) %>% filter(rowSums(is.na(select(., -id))) != ncol(.) - 1) %>%
-  mutate(education_0 = as.integer(rowSums(select(., starts_with('X6138')) == 1, na.rm = TRUE) > 0))
-
-education_1 <- education %>%
-  select(id, starts_with('X6138.1')) %>% filter(rowSums(is.na(select(., -id))) != ncol(.) - 1) %>%
-  mutate(education_1 = as.integer(rowSums(select(., starts_with('X6138')) == 1, na.rm = TRUE) > 0))
-
-education_2 <- education %>%
-  select(id, starts_with('X6138.2')) %>% filter(rowSums(is.na(select(., -id))) != ncol(.) - 1) %>%
-  mutate(education_2 = as.integer(rowSums(select(., starts_with('X6138')) == 1, na.rm = TRUE) > 0))
-
-education_3 <- education %>%
-  select(id, starts_with('X6138.3')) %>% filter(rowSums(is.na(select(., -id))) != ncol(.) - 1) %>%
-  mutate(education_3 = as.integer(rowSums(select(., starts_with('X6138')) == 1, na.rm = TRUE) > 0))
-
-education <- merge(education_0, education_1, by = 'id', all = TRUE)
-education <- merge(education, education_2, by = 'id', all = TRUE)
-education <- merge(education, education_3, by = 'id', all = TRUE) %>%
+# add maximum qualification per participant per assessment visit
+education <- education %>%
+  mutate(education_0 = apply(select(., starts_with('X6138.0')), 1, function(x) education_classify(x)),
+         education_1 = apply(select(., starts_with('X6138.1')), 1, function(x) education_classify(x)),
+         education_2 = apply(select(., starts_with('X6138.2')), 1, function(x) education_classify(x)),
+         education_3 = apply(select(., starts_with('X6138.3')), 1, function(x) education_classify(x))) %>%
   select(id, education_0, education_1, education_2, education_3)
-rm(education_0, education_1, education_2, education_3)
+
 
 
 ## cognition
@@ -240,7 +242,13 @@ death <- data_all %>%
 colnames(death) <- c('id', 'death_date')
 death$death_date <- as.Date(death$death_date, format = '%Y-%m-%d')
 death$death <- 0; death$death[!is.na(death$death_date)] <- 1
-
+# include loss to follow-up
+follow_loss <- data_all %>% 
+  select(c(eid, X191.0.0))
+colnames(follow_loss) <- c('id', 'follow_loss_date')
+follow_loss$follow_loss_date <- as.Date(follow_loss$follow_loss_date, format = '%Y-%m-%d')
+follow_loss$follow_loss <- 0; follow_loss$follow_loss[!is.na(follow_loss$follow_loss_date)] <- 1
+early_cens <- merge(death, follow_loss, by = 'id', all = TRUE)
 
 
 
@@ -261,6 +269,7 @@ mood_ado$mood_dis_date[mood_ado$mood_dis_date == as.Date('1902-02-02', format = 
 
 
 ## deprivation
+#deprivation <- read.csv('D://Job/Raw data/deprivation.csv')
 deprivation <- data_all %>% 
   select(c(eid, starts_with(c('X189')))) %>%
   rename(id = eid, deprivation = X189.0.0)
@@ -298,19 +307,18 @@ outcomes <- outcomes %>%
                                       'X131302.0.0', 'X131304.0.0', 'X131306.0.0')), 
                              pmin, na.rm = TRUE)) %>%
   rename(id = eid) %>%
-  select(id, respiratory_date, hepatic_date, flu_date, heart_date) %>%  
-  filter(rowSums(is.na(select(., -id))) != ncol(.) - 1)
+  select(id, respiratory_date, hepatic_date, flu_date, heart_date)
 outcomes$respiratory <- 0; outcomes$respiratory[!is.na(outcomes$respiratory_date)] <- 1
-outcomes$respiratory[outcomes$respiratory_date %in% invalid_dates] <- 99
+outcomes$respiratory[outcomes$respiratory_date %in% invalid_dates] <- 999
 outcomes$respiratory_date[outcomes$respiratory_date %in% invalid_dates] <- NA
 outcomes$hepatic <- 0; outcomes$hepatic[!is.na(outcomes$hepatic_date)] <- 1
-outcomes$hepatic[outcomes$hepatic_date %in% invalid_dates] <- 99
+outcomes$hepatic[outcomes$hepatic_date %in% invalid_dates] <- 999
 outcomes$hepatic_date[outcomes$hepatic_date %in% invalid_dates] <- NA
 outcomes$flu <- 0; outcomes$flu[!is.na(outcomes$flu_date)] <- 1
-outcomes$flu[outcomes$flu_date %in% invalid_dates] <- 99
+outcomes$flu[outcomes$flu_date %in% invalid_dates] <- 999
 outcomes$flu_date[outcomes$flu_date %in% invalid_dates] <- NA
 outcomes$heart <- 0; outcomes$heart[!is.na(outcomes$heart_date)] <- 1
-outcomes$heart[outcomes$heart_date %in% invalid_dates] <- 99
+outcomes$heart[outcomes$heart_date %in% invalid_dates] <- 999
 outcomes$heart_date[outcomes$heart_date %in% invalid_dates] <- NA
 
 
@@ -353,6 +361,206 @@ infect$infect[infect$infect_date == as.Date('1903-03-03', format = '%Y-%m-%d')] 
 infect$infect_date[infect$infect_date == as.Date('1903-03-03', format = '%Y-%m-%d')] <- NA
 
 
+## appendicitis
+appendicitis <- data_all %>% 
+  select(c(eid, starts_with(c('X131604.', 'X131606.', 'X131608.')))) %>%
+  mutate(across(starts_with('X'), ~as.Date(., format = '%Y-%m-%d'))) %>%
+  mutate(appendicitis_date = reduce(across(starts_with('X')), pmin, na.rm = TRUE)) %>%
+  rename(id = eid) %>%
+  select(id, appendicitis_date)
+appendicitis$appendicitis <- 0
+appendicitis$appendicitis[!is.na(appendicitis$appendicitis_date)] <- 1
+
+
+
+
+
+
+### Diagnoses by manual search of hospital or GP records
+# (tinnitus, primary care dementia, hip fracture, and head injury)
+
+# inpatient diagnoses
+inpatient <- readRDS('inpatient_diagnoses.rds') # field IDs 41270, 41271, 41280, and 41281
+colnames(inpatient)[colnames(inpatient) == 'diagnosis'] <- 'code'
+inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
+inpatient$diagnosis <- NA
+
+# GP diagnoses
+gp_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, quote='') # field ID 42040
+gp_diagnoses <- as.data.frame(gp_diagnoses)
+gp_diagnoses <- subset(gp_diagnoses, select = c(eid, data_provider, event_dt, 
+                                                read_2, read_3))
+colnames(gp_diagnoses) <- c('id', 'data_provider', 'date_primary', 'read2', 'read3')
+gp_diagnoses$date_primary <- as.Date(gp_diagnoses$date_primary, format = '%d/%m/%Y')
+gp_diagnoses[gp_diagnoses == ''] <- NA
+gp_diagnoses$diagnosis <- NA
+
+# diagnosis codes
+diagnosis_codes <- data.frame(
+  disorder = c('tinnitus', 'tinnitus', rep('hip_fract', 13), rep('head_inj', 40),
+               rep('dementia_gp', 295)),
+  code = c('H931', '3883', 'S720', 'S7200', 'S7201', 'S721', 'S7210', 'S7211',
+           'S722', 'S7220', 'S7221', '820', '8200', '8202', '8208',
+           'S06', 'S060', 'S0600', 'S0601', 'S061', 'S0610', 'S062', 'S0620',
+           'S0621', 'S063', 'S0630', 'S0631', 'S064', 'S0640', 'S0641', 'S065', 
+           'S0650', 'S0651', 'S066', 'S0660', 'S0661', 'S067', 'S0670', 'S068', 
+           'S0680', 'S0681', 'S069', 'S0690', 'S0691', '850', '8509', '851', 
+           '8510', '852', '8520', '853', '8530', '854', '8540', '8541',
+           '1461',  'A411.', 'A4110', 'E00..', 'E000.', 'E001.', 'E0010', 'E0011', 
+           'E0012', 'E0013', 'E001z', 'E002.', 'E0020', 'E0021', 'E002z', 'E003.', 
+           'E004.', 'E0040', 'E0041', 'E0042', 'E0043', 'E004z', 'E012.', 'E02y1', 
+           'E041.', 'Eu00.', 'Eu000', 'Eu001', 'Eu002', 'Eu00z', 'Eu01.', 'Eu010', 
+           'Eu011', 'Eu012', 'Eu013', 'Eu01y', 'Eu01z', 'Eu02.', 'Eu020', 'Eu021', 
+           'Eu022', 'Eu023', 'Eu024', 'Eu025', 'Eu02y', 'Eu02z', 'Eu041', 'Eu106', 
+           'Eu107', 'F110.', 'F1100', 'F1101', 'F111.', 'F112.', 'F116.', 'F118.', 
+           'F11x2', 'F11x7', 'F11x9', 'F11y2', 'F21y2', 'Fyu30', '38C13', '3AE3.', 
+           '3AE4.', '3AE5.', '3AE6.', '66h..', '6AB..', '8BM02', '8BM50', '8BM60', 
+           '8BPa.', '8CMe0', '8CMG2', '8CMZ.', '8CMZ0', '8CMZ1', '8CMZ2', '8CMZ3', 
+           '8CSA.', '8Hla.', '8IAe0', '8IAe2', '9hD..', '9hD0.', '9hD1.', '9Ou..', 
+           '9Ou1.', '9Ou2.', '9Ou3.', '9Ou4.', '9Ou5.', '.1461', '1461',  '.E11.', 
+           '.E111', '.E112', '.E113', '.E114', '.E115', '.E116', '.E11Z', '.F21Z', 
+           '.F371', '.G78.', 'A411.', 'A4110', 'E00..', 'E000.', 'E001.', 'E0010', 
+           'E0011', 'E0012', 'E0013', 'E001z', 'E002.', 'E0020', 'E0021', 'E002z', 
+           'E003.', 'E004.', 'E0040', 'E0041', 'E0042', 'E0043', 'E004z', 'E012.', 
+           'E02y1', 'E041.', 'Eu00.', 'Eu000', 'Eu001', 'Eu002', 'Eu00z', 'Eu01.', 
+           'Eu010', 'Eu011', 'Eu012', 'Eu013', 'Eu01y', 'Eu01z', 'Eu02.', 'Eu020', 
+           'Eu021', 'Eu022', 'Eu023', 'Eu024', 'Eu025', 'Eu02y', 'Eu02z', 'Eu041', 
+           'F110.', 'F1100', 'F1101', 'F111.', 'F112.', 'F116.', 'F118.', 'F11x2', 
+           'F11x7', 'F11y2', 'F21y2', 'Fyu30', 'Ub1T6', 'X002m', 'X002w', 'X002x',
+           'X002y', 'X002z', 'X0030', 'X0031', 'X0032', 'X0033', 'X0034', 'X0035', 
+           'X0036', 'X0037', 'X0039', 'X003A', 'X003B', 'X003C', 'X003D', 'X003E', 
+           'X003F', 'X003G', 'X003H', 'X003I', 'X003J', 'X003l', 'X003m', 'X003P', 
+           'X003R', 'X003T', 'X003V', 'X003W', 'X003X', 'X00R2', 'X00Rk', 'Xa0lH', 
+           'Xa0sC', 'Xa0sE', 'Xa1GB', 'Xa25J', 'Xa3ez', 'XaA1S', 'XabVp', 'XaE74', 
+           'XaIKB', 'XaIKC', 'XaKyY', 'XaOfZ', 'XE17j', 'XE1aG', 'XE1Xs', 'XE1Xu', 
+           'XE1Z6', '.3AE3', '.3AE4', '.3AE5', '.3AE6', '.66h.', '.6AB.', '.9hD1', 
+           '.9Ou.', '.9Ou1', '.9Ou2', '.9Ou3', '.9Ou4', '.9Ou5', '3AE3.', '3AE4.', 
+           '3AE5.', '3AE6.', '66h..', '6AB..', '8BM02', '8BM50', '8BPa.', '8CMe0', 
+           '8CMG2', '8CMZ.', '8CMZ0', '8CMZ1', '8CMZ2', '8CMZ3', '8CSA.', '8IAe0', 
+           '8IAe2', '9hD1.', '9Ou.',  '9Ou1.', '9Ou2.', '9Ou3.', '9Ou4.', '9Ou5.', 
+           'Xa0fZ', 'XaaBZ', 'XaaeA', 'XaaiW', 'Xabd2', 'Xabd3', 'XabEk', 'XabEl', 
+           'XabtQ', 'XacIx', 'XacIy', 'XacIz', 'XacJ0', 'XacLx', 'Xacly', 'Xaclz', 
+           'XacM2', 'Xaefu', 'XaJBQ', 'XaJBU', 'XaJBV', 'XaJBW', 'XaJBX', 'XaJPy', 
+           'XaLFf', 'XaLFo', 'XaLFp', 'XaMFy', 'XaMG0', 'XaMGF', 'XaMGG', 'XaMGI', 
+           'XaMGJ', 'XaMGK', 'XaMJC', 'XaYFR', 'XaYPX', 'XaZqJ', 'XaZWz'),
+  source = c('icd10', 'icd9', rep('icd10', 9), rep('icd9', 4), rep('icd10', 29),
+             rep('icd9', 11), rep('read2', 93), rep('read3', 202)))
+
+diagnosis_codes$n <- NA
+
+# remove duplicate codes and match codes with descriptions
+inpatient <- inpatient %>% arrange(date)
+for (d in c('icd9', 'icd10')){
+  for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
+    
+    inpatient$diagnosis[inpatient$version == d & inpatient$code == diagnosis] <- 
+      diagnosis_codes$disorder[diagnosis_codes$source == d & diagnosis_codes$code == diagnosis]
+    
+    diagnosis_codes$n[diagnosis_codes$source == d & diagnosis_codes$code == diagnosis] <- 
+      length(inpatient$diagnosis[inpatient$version == d & inpatient$code == diagnosis])
+  }
+}
+inpatient <- inpatient %>%
+  filter(!is.na(diagnosis))
+
+
+# repeat for primary care (just for dementia)
+gp_diagnoses <- gp_diagnoses %>% arrange(date_primary)
+for (d in c('read2', 'read3')){
+  for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
+    
+    gp_diagnoses$diagnosis[!is.na(gp_diagnoses[[d]]) & gp_diagnoses[[d]] == diagnosis] <- 
+      diagnosis_codes$disorder[diagnosis_codes$source == d & diagnosis_codes$code == diagnosis]
+    
+    diagnosis_codes$n[diagnosis_codes$source == d & diagnosis_codes$code == diagnosis] <- 
+      length(gp_diagnoses$diagnosis[!is.na(gp_diagnoses[[d]]) & gp_diagnoses[[d]] == diagnosis])
+  }
+}
+
+
+
+
+## dementia GP
+dementia_gp <- gp_diagnoses %>%
+  filter(!is.na(diagnosis)) %>%
+  distinct(id, date_primary, .keep_all = TRUE) %>%
+  select(id, date_primary) %>%
+  rename(dementia_gp_date = date_primary)
+dementia_gp$dementia_gp <- 1
+dementia_gp$dementia_gp[is.na(dementia_gp$dementia_gp_date)] <- 999
+
+
+
+
+
+## tinnitus
+# inpatient data
+tinnitus <- inpatient %>%
+  filter(diagnosis == 'tinnitus') %>%
+  select(id, date) %>%
+  rename(tinnitus_date = date)
+
+# self-report data
+tinnitus_sr <- data_all %>%
+  select(eid, starts_with(c('X4803.', 'X53.'))) %>%
+  rename(id = eid) %>%
+  merge(., tinnitus, by = 'id', all = TRUE)
+
+for (col in c('0.0', '1.0', '2.0', '3.0')){
+  tin_col <- paste0('X4803.', col)
+  date_col <- paste0('X53.', col)
+  # specify category
+  tinnitus_sr[[tin_col]][tinnitus_sr[[tin_col]] %in% c(11, 12, 13, 14)] <- 1
+  tinnitus_sr[[tin_col]][tinnitus_sr[[tin_col]] %in% c(0)] <- 0
+  tinnitus_sr[[tin_col]][tinnitus_sr[[tin_col]] %in% c(-3, -1)] <- -7
+  # assume that if answer left blank, answer is 0
+  tinnitus_sr[[tin_col]][is.na(tinnitus_sr[[tin_col]]) & !is.na(tinnitus_sr[[date_col]])] <- 0
+}
+
+# all those that indicated tinnitus previously get 1 at later assessments
+# (because we're interested in history of tinnitus)
+tinnitus_sr$X4803.0.0[!is.na(tinnitus_sr$tinnitus_date) & 
+                        tinnitus_sr$tinnitus_date < tinnitus_sr$X53.0] <- 1
+tinnitus_sr$X4803.1.0[(tinnitus_sr$X4803.0.0 == 1) |
+                        (!is.na(tinnitus_sr$tinnitus_date) & 
+                        tinnitus_sr$tinnitus_date < tinnitus_sr$X53.1)] <- 1
+tinnitus_sr$X4803.2.0[(tinnitus_sr$X4803.1.0 == 1) |
+                        (!is.na(tinnitus_sr$tinnitus_date) & 
+                           tinnitus_sr$tinnitus_date < tinnitus_sr$X53.2)] <- 1
+tinnitus_sr$X4803.3.0[(tinnitus_sr$X4803.2.0 == 1) |
+                        (!is.na(tinnitus_sr$tinnitus_date) & 
+                           tinnitus_sr$tinnitus_date < tinnitus_sr$X53.3)] <- 1
+tinnitus_sr <- tinnitus_sr %>%
+  select(id, starts_with('X4803.'))
+colnames(tinnitus_sr) <- c('id', 'tinnitus_sr_0', 'tinnitus_sr_1', 'tinnitus_sr_2',
+                           'tinnitus_sr_3')
+tinnitus_sr[is.na(tinnitus_sr)] <- 0
+
+
+
+## hip fracture
+hip_fract <- inpatient %>%
+  filter(diagnosis == 'hip_fract') %>%
+  select(id, date) %>%
+  rename(hip_fract_date = date)
+hip_fract$hip_fract <- 1
+
+
+
+
+## head injury
+## hip fracture
+head_inj <- inpatient %>%
+  filter(diagnosis == 'head_inj') %>%
+  select(id, date) %>%
+  rename(head_inj_date = date)
+head_inj$head_inj <- 1
+
+
+
+
+
+
 
 
 
@@ -366,19 +574,23 @@ inpatient_source[inpatient_source == ''] <- NA
 # set aside those with several sources
 multi_source <- filter(inpatient_source, !is.na(X40022.0.1)) %>% select(eid)
 
+# set aside those without any source
+no_source <- filter(inpatient_source, is.na(X40022.0.0)) %>% select(eid)
+
 # get most common source of hospital diagnoses for those with several records
-diagnoses_dates <- read.csv('hesin.txt', sep='\t')  # UKB category 2006
+diagnoses_dates <- data.table::fread('hesin.txt', sep='\t') %>%
+  as.data.frame()
 diagnoses_dates$epistart <- as.Date(diagnoses_dates$epistart, format = '%d/%m/%Y')
 
-# those with just one data provider throughout the entire period
+# first, those with just one data provider throughout the entire period
 inpatient_constant <- inpatient_source %>%
   filter(!eid %in% multi_source$eid) %>%
   rename(id = eid, data_provider = X40022.0.0) %>%
   select(id, data_provider)
 
-# those with several data providers
+# second, those with several data providers
 inpatient_flux_freq <- diagnoses_dates %>%
-  filter(eid %in% multi_source$eid) %>% # just resolve those with several data providers
+  filter(eid %in% multi_source$eid | eid %in% no_source$eid) %>% # just resolve those with several data providers
   group_by(eid, dsource) %>% # group by data provider and id
   summarise(count = n()) %>% # count number of instances for id-source combo
   ungroup() %>%
@@ -391,9 +603,10 @@ inpatient_flux_freq <- diagnoses_dates %>%
 inpatient_freq <- rbind(inpatient_constant, inpatient_flux_freq) %>%
   filter(!is.na(data_provider)) # remove those that never went to hospital
 
-# get latest date of hospital diagnoses for those with multiple data providers (to determine censoring later on) 
+# get latest date of hospital diagnoses for those with multiple data providers 
+# or no data provider (to determine censoring later on) 
 diagnoses_dates_dt <- diagnoses_dates %>%
-  filter(eid %in% multi_source$eid) %>%
+  filter(eid %in% multi_source$eid | eid %in% no_source$eid) %>%
   filter(!is.na(epistart)) %>%
   data.table::as.data.table(diagnoses_dates)
 inpatient_flux_last <- as.data.frame(diagnoses_dates_dt[, .(epistart = 
@@ -416,7 +629,7 @@ inpatient_last <- rbind(inpatient_constant, inpatient_flux_last) %>%
 
 
 # For those that do not have inpatient data providers, we will first use GP registrations to fill the gaps
-gp_reg <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>% 
+gp_reg <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>%
   rename(id = eid)
 gp_reg[gp_reg == ''] <- NA
 gp_reg <- gp_reg %>%
@@ -592,21 +805,27 @@ inpatient <- rbind(icd9, icd10)
 saveRDS(inpatient, 'inpatient_diagnoses.rds') 
 
 
-# NAs to 0s
-outcomes <- outcomes %>%
-  mutate(across(c(respiratory, hepatic, flu, heart), 
-                ~ replace_na(., 0)))
-# 99 dummy value to NA
-outcomes[outcomes == 99] <- NA
-
 
 # merge all data frames in the list
 covariates <- Reduce(function(x, y) merge(x, y, by = 'id', all = TRUE), 
-                    list(dementia, dems, education, deprivation, cognition, 
-                         social, death, mood_ado, outcomes, asthma, skin, 
-                         infect, data_provider_last, data_provider_freq))
+                     list(dementia, dementia_gp, dems, education, deprivation, 
+                          cognition, social, death, mood_ado, outcomes, asthma, 
+                          skin, infect, tinnitus_sr, head_inj, ethnicity, hip_fract,
+                          appendicitis, data_provider_last, data_provider_freq))
+
+# NAs to 0s
+covariates <- covariates %>%
+  mutate(across(c(dementia, death, respiratory, hepatic, flu, heart,
+                  head_inj, dementia_gp), 
+                ~ replace_na(., 0)))
+
+# 999 dummy value to NA
+covariates[covariates == 999] <- NA
 
 covariates$id <- as.character(covariates$id)
+
+
+
 
 # export and clear environment
 saveRDS(covariates, 'covariates_prepped.Rds')
