@@ -71,7 +71,7 @@ hear$data_cens_date <- zoo::as.Date(hear$data_cens_date)
 
 # set the censoring dates to the date that occurs earlier.
 hear <- hear %>%
-  mutate(censor_date = reduce(across(c('dementia_date', 'death_date', 
+  mutate(censor_date = reduce(across(c('dementia_date', 'death_date', 'follow_loss_date',
                                        'data_cens_date')), pmin, na.rm = TRUE))
 
 # for those that are labelled as having experienced the outcome after the censoring date, set the outcome to 0
