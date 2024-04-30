@@ -354,11 +354,14 @@ hear_PP$censor_date[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 &
                       hear_PP$ha_cease_date < hear_PP$censor_date] <- 
   hear_PP$ha_cease_date[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
                           hear_PP$ha_cease_date < hear_PP$censor_date]
-# if dementia or death if occur after the (new) censoring date set them, respectively, to 0
+# if dementia or death or loss to follow-up occur after the (new) censoring date, 
+# set them, respectively, to 0
 hear_PP$dementia[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
                    hear_PP$dementia == 1 & hear_PP$dementia_date > hear_PP$censor_date] <- 0
 hear_PP$death[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
                 hear_PP$death == 1 & hear_PP$death_date > hear_PP$censor_date] <- 0
+hear_PP$follow_loss[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
+                hear_PP$follow_loss == 1 & hear_PP$follow_loss_date > hear_PP$censor_date] <- 0
 
 # calculate follow-up
 hear$follow_up <- as.numeric(difftime(hear$censor_date, 
