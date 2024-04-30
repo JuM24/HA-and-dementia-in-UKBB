@@ -9,7 +9,7 @@ source('0_helper_functions.R')
 hear <- readRDS('hearing_masterfile_prepped.rds')
 
 # file with censoring dates
-cens_dates <- readxl::read_excel('censoring_dates.xlsx')
+cens_dates <- readxl::read_excel('censoring_dates_new.xlsx')
 cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
 
 # We are interested in only those participants that have hearing loss; 
@@ -18,6 +18,9 @@ cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
 hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
                  is.na(hear_congenital) & cochl_impl_any == 0 | 
                  (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
+
+# remove those with HL before baseline assessment due to strong selection into study
+hear <- filter(hear, date_hear_loss_any >= date_0)
 
 # for those that remain, cochlear implant date will become HA date of it's earlier than HA date
 hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & 
@@ -44,6 +47,7 @@ hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_an
 hear <- find_closest_non_missing(hear, 'education', date_hear_loss_any = 'date_hear_loss_any')
 hear <- find_closest_non_missing(hear, 'g', date_hear_loss_any = 'date_hear_loss_any')
 hear <- find_closest_non_missing(hear, 'srt_min', date_hear_loss_any = 'date_hear_loss_any')
+hear <- find_closest_non_missing(hear, 'tinnitus_sr', date_hear_loss_any = 'date_hear_loss_any')
 hear <- find_closest_non_missing(hear, 'soc_isol', date_hear_loss_any = 'date_hear_loss_any')
 
 # Those without imputed censoring date get the value '0' for data provider value
@@ -82,9 +86,9 @@ hear$age_USE <- as.numeric(difftime(hear$date_hear_loss_any,
                                     hear$birth_date, units = 'days'))/365.25
 
 # for mood disorders, remove dates after starting date 
-# (it's a confounder and must occur before to affect outcome and exposure)
 hear$mood_dis[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- 0
 hear$mood_dis_date[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- NA
+
 
 # define the 'grace period'. This is the period from HL in which start of use of 
 # HA will still lead to the classification as 'exposed'
@@ -97,14 +101,21 @@ hear$hear_aid_any[hear$grace_period == 0] <- 0
 
 # just keep non-missing rows and individuals with assessment data <=5 years removed from the date of HL
 hear <- hear %>% drop_na(any_of(c('age_USE', 'sex', 'education_USE', 'deprivation', 
-                                  'g_USE', 'srt_min_USE', 'data_provider_freq', 
+                                  'g_USE', 'srt_min_USE', 'data_provider_freq',
+                                  'tinnitus_sr_USE', 'ethnicity',
                                   'dementia'))) %>%
-  filter(min_diff_education <= 5*365.25 & min_diff_g <= 5*365.25 & min_diff_srt_min <= 5*365.25)
+  filter(min_diff_education <= 5*365.25 & 
+           min_diff_g <= 5*365.25 & 
+           min_diff_srt_min <= 5*365.25 &
+           min_diff_tinnitus_sr <= 5*365.25)
 
 
 
 # To factors.
-hear <- hear %>% mutate(across(c(education_USE, sex, data_provider_freq, soc_isol_USE, mood_dis), as.factor))
+hear <- hear %>% mutate(across(c(education_USE, sex, data_provider_freq, 
+                                 soc_isol_USE, mood_dis, tinnitus_sr_USE,
+                                 ethnicity), 
+                               as.factor))
 # Some participants might have been censored due to death or dementia after HL 
 # but within the grace period. Thus, within the period between HL and censoring, 
 # those participants were at the same time exposed and unexposed. To avoid this, 
@@ -121,8 +132,12 @@ prop_han <- round(as.numeric(prop.table(table(filter(hear, early_cens == 0)$hear
 set.seed(24)
 hear <- hear %>%
   rowwise %>%
-  mutate(hear_aid_any = ifelse(early_cens == 1, sample(c(0, 1), 1, replace = TRUE, 
-                                                       prob = c(prop_han, prop_ha)), hear_aid_any)) %>%
+  mutate(hear_aid_any = ifelse(early_cens == 1, sample(
+    c(0, 1), 
+    1, 
+    replace = TRUE,
+    prob = c(prop_han, prop_ha)),
+    hear_aid_any)) %>%
   ungroup()
 
 
@@ -164,7 +179,10 @@ meds_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, qu
 # create a vector of all IDs that have primary care data
 gp_data <- unique(c(meds_regs$id, meds_presc$id, meds_diagnoses$id))
 
-# the diagnoses and prescriptions will be used for primary care contact
+# number of unique dates among prescriptions and GP diagnoses per person
+
+
+# the diagnoses and prescriptions will also be used for primary care contact
 meds_diagnoses$date_primary <- as.Date(meds_diagnoses$event_dt, format = '%d/%m/%Y')
 meds_diagnoses <- merge(meds_diagnoses, time_zero, by = 'id')
 meds_diagnoses <- subset(meds_diagnoses, select = c(id, event_dt, date_hear_loss_any))
@@ -175,39 +193,27 @@ meds_presc <- meds_presc %>%
   select(id, issue_date, date_hear_loss_any) %>%
   rename(event_dt = issue_date)
 
+gp_all <- rbind(meds_presc, meds_diagnoses)
 
 # for events and prescriptions, remove duplicate entries for each date per ID
-presc_contact <- meds_presc %>%
+gp_contact <- gp_all %>%
   filter(event_dt < date_hear_loss_any) %>%
   distinct(id, event_dt, .keep_all = TRUE) %>%
   group_by(id) %>%
-  mutate(presc_contact = n()) %>%
+  mutate(gp_contact = n()) %>%
   ungroup() %>%
-  select(id, presc_contact) %>%
+  select(id, gp_contact) %>%
   distinct(id, .keep_all = TRUE)
 
-diag_contact <- meds_diagnoses %>%
-  filter(event_dt < date_hear_loss_any) %>%
-  distinct(id, event_dt, .keep_all = TRUE) %>%
-  group_by(id) %>%
-  mutate(diag_contact = n()) %>%
-  ungroup() %>%
-  select(id, diag_contact) %>%
-  distinct(id, .keep_all = TRUE)
-
-gp_contact <- merge(presc_contact, diag_contact, by = 'id', all = TRUE)
 # set those with gp data but NAs in gp_contact to 0; the rest are true NAs
 gp_contact <- merge(gp_contact, time_zero, by = 'id', all = TRUE)
-gp_contact$presc_contact[is.na(gp_contact$presc_contact) & gp_contact$id %in% gp_data] <- 0
-gp_contact$diag_contact[is.na(gp_contact$diag_contact) & gp_contact$id %in% gp_data] <- 0
-
+gp_contact$gp_contact[is.na(gp_contact$gp_contact) & gp_contact$id %in% gp_data] <- 0
 
 # merge both sources and create new variable for any healthcare contact
 inpatient_contact$date_hear_loss_any <- NULL; gp_contact$date_hear_loss_any <- NULL
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
-
 hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
-
+# categorise inpatient contact
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact == 0] <- '0' # 0
 hear$inpatient_contact_cat[hear$inpatient_contact == 1] <- '1' # 1
@@ -218,6 +224,37 @@ hear$inpatient_contact_cat[hear$inpatient_contact >= 5 &
                              hear$inpatient_contact <= 6] <- '5-6' # 5-6
 hear$inpatient_contact_cat[hear$inpatient_contact >= 7]  <- '7+' # 7+
 hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
+
+
+
+
+
+## hospital specialty
+diagnoses_dates <- read.csv('hesin.txt', sep='\t')  # UKB category 2006
+diagnoses_dates$epistart <- as.Date(diagnoses_dates$epistart, format = '%d/%m/%Y')
+hosp_spec <- diagnoses_dates %>%
+  distinct(eid, tretspef_uni) %>%
+  group_by(eid) %>%
+  mutate(specialty_n = n()) %>%
+  distinct(eid, .keep_all = TRUE) %>%
+  rename(id = eid)
+# categorise
+hosp_spec$specialty_n_cat <- as.character(hosp_spec$specialty_n)
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n %in% c(6, 7)] <- '7'
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n >= 8] <- '8'
+
+# NA were not admitted so set to 0
+hear <- merge(hear, hosp_spec, by = 'id', all.x = TRUE)
+hear$specialty_n_cat[is.na(hear$specialty_n_cat)] <- '0'
+hear$specialty_n_cat <- as.factor(hear$specialty_n_cat)
+
+
+
+
+
+
+
+
 
 
 
