@@ -8,6 +8,8 @@ source('0_helper_functions.R')
 # field IDs 2247, 2257, 4849, 3393, 20019, 20021, 131258, 131260, 131259, 131261, 4792, 132460
 
 hear <- readRDS('main_vars.Rds') %>%
+  # TODO: remove line below when sample n confusion is clarified
+  filter(!is.na(X31.0.0)) %>%
   select(eid, starts_with(c('X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 
                             'X20021.', 'X131258.', 'X131260.', 'X131259.', 'X131261.',
                             'X4792.', 'X132460.')))
@@ -108,6 +110,11 @@ for (d in c('icd9', 'icd10')){
       length(inpatient$diagnosis[inpatient$version == d & inpatient$code == diagnosis])
   }
 }
+# just keep first instance per diagnosis type
+inpatient <- inpatient %>%
+  arrange(date) %>%
+  distinct(id, diagnosis, .keep_all = TRUE)
+
 
 # repeat for primary care
 for (d in c('read2', 'read3')){
@@ -120,6 +127,8 @@ for (d in c('read2', 'read3')){
       length(gp_diagnoses$diagnosis[!is.na(gp_diagnoses[[d]]) & gp_diagnoses[[d]] == diagnosis])
   }
 }
+
+
 
 # save the number of identified diagnoses
 write.csv(diagnosis_codes, 'hearing_codes_filled.csv')
@@ -166,8 +175,9 @@ diagnoses <- merge(diagnoses, diagnosis_codes, by = 'diag_code', all.x = TRUE)
 # separate into data frames of distinct diagnoses, rename columns; 
 # then merge with main data frame; tag the ones without dates (they are going to be removed later)
 # do this for hearing loss, hearing aid use, hearing aid use cessation, and cochlear implants
-hear_loss_diag <- filter(diagnoses, diag == 'hl')
-hear_loss_diag <- hear_loss_diag %>%
+hear_loss_diag <- filter(diagnoses, diag == 'hl') %>%
+  arrange(diag_date) %>%
+  distinct(id, .keep_all = TRUE) %>%
   rename(hear_loss_code = diag_code, hear_loss_diag = diag, hear_loss_date = diag_date, 
          hear_loss_year = diag_year, hear_loss_desc = diag_desc,
          hear_loss_source = diag_source, hear_loss_data_provider = diag_data_provider)
@@ -177,6 +187,8 @@ hear_loss_diag$hear_loss_nodate[is.na(hear_loss_diag$hear_loss_date)] <- 1
 
 hear_aid <- diagnoses %>%
   filter(diag == 'ha') %>%
+  arrange(diag_date) %>%
+  distinct(id, .keep_all = TRUE) %>%
   select(c(id, diag_date, diag_year, diag_code, 
            diag_desc, diag_source, diag_data_provider))
 hear_aid$hear_aid <- 1
@@ -187,6 +199,8 @@ hear_aid$hear_aid_nodate[is.na(hear_aid$hear_aid_date)] <- 1
 
 cochl_impl <- diagnoses %>%
   filter(diag == 'ci') %>%
+  arrange(diag_date) %>%
+  distinct(id, .keep_all = TRUE) %>%
   select(id, diag_date, diag_year, diag_code, 
           diag_desc, diag_source, diag_data_provider)
 cochl_impl$cochl_impl <- 1
@@ -198,6 +212,8 @@ cochl_impl$cochl_impl_nodate[is.na(cochl_impl$cochl_impl_date)] <- 1
 
 ha_cessation <- diagnoses %>%
   filter(diag == 'ha_cessation') %>%
+  arrange(diag_date) %>%
+  distinct(id, .keep_all = TRUE) %>%
   select(id, diag_date, diag_year, diag_code, 
          diag_desc, diag_source, diag_data_provider)
 
