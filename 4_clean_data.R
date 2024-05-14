@@ -149,7 +149,7 @@ hear <- hear %>%
 
 ## add healthcare contact control
 time_zero <- hear %>%
-  select(id, date_hear_loss_any)
+  select(id, date_hear_loss_any, censor_date)
 
 # inpatient diagnoses
 inpatient <- readRDS('inpatient_diagnoses.rds')
@@ -190,20 +190,19 @@ gp_data <- unique(c(meds_regs$id, meds_presc$id, meds_diagnoses$id))
 # the diagnoses and prescriptions will also be used for primary care contact
 meds_diagnoses$event_dt <- as.Date(meds_diagnoses$event_dt, format = '%d/%m/%Y')
 meds_diagnoses <- merge(meds_diagnoses, time_zero, by = 'id')
-meds_diagnoses <- subset(meds_diagnoses, select = c(id, event_dt, date_hear_loss_any))
+meds_diagnoses <- subset(meds_diagnoses, select = c(id, event_dt, date_hear_loss_any,
+                                                    censor_date))
 
 meds_presc$issue_date <- as.Date(meds_presc$issue_date, format = '%d/%m/%Y')
 meds_presc <- merge(meds_presc, time_zero, by = 'id')
 meds_presc <- meds_presc %>% 
-  select(id, issue_date, date_hear_loss_any) %>%
+  select(id, issue_date, date_hear_loss_any, censor_date) %>%
   rename(event_dt = issue_date)
 
 gp_all <- rbind(meds_presc, meds_diagnoses)
 gp_all <- merge(gp_all, subset(hear, select = c(id, data_provider_last_gp)),
                 by = 'id', all = TRUE)
 
-## for GP data, calculate the number of GP visits in the last five years
-## before time 0
 # set GP data censoring date
 gp_all$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '1'] <-
@@ -215,6 +214,10 @@ gp_all$censor_date_gp[gp_all$data_provider_last_gp == '3'] <-
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '4'] <-
   zoo::as.Date('30/09/2017', format = '%d/%m/%Y')
 
+# minimum censor date between GP ascertainment and loss to follow-up
+gp_all <- gp_all %>%
+  mutate(censor_date_any = reduce(across(starts_with('censor_date_')), 
+                                  pmin, na.rm = TRUE))
 
 # for events and prescriptions, remove duplicate entries for each date per ID
 gp_contact <- gp_all %>%
