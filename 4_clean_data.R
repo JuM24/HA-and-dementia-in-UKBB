@@ -28,7 +28,7 @@ hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any &
                          (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)] <- 
   hear$date_cochl_impl_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & 
                               hear$hear_aid_any == 1 & hear$cochl_impl_any == 1) |
-                           (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
+                             (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
 
 
 # Remove those with dementia before or at the same date as hearing loss.
@@ -142,6 +142,11 @@ hear <- hear %>%
 
 
 
+
+
+
+
+
 ## add healthcare contact control
 time_zero <- hear %>%
   select(id, date_hear_loss_any)
@@ -152,9 +157,10 @@ colnames(inpatient)[colnames(inpatient) == 'diagnosis'] <- 'code'
 inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
 inpatient <- merge(inpatient, time_zero, by = 'id')
 
-# number of secondary hospital contacts
+# number of secondary hospital contacts in the last five years
 inpatient_contact <- inpatient %>%
-  filter(date < date_hear_loss_any) %>% # keep only those with contact dates before HL
+  filter(date < date_hear_loss_any & 
+           date > date_hear_loss_any-5*365.25) %>% # keep only those with contact dates before HL
   distinct(id, date, .keep_all = TRUE) %>% # count multiple contacts on same day as one contact
   group_by(id) %>%
   mutate(inpatient_contact = n()) %>% # count per participant
@@ -168,7 +174,8 @@ inpatient_contact$inpatient_contact[is.na(inpatient_contact$inpatient_contact)] 
 
 
 ## primary care
-meds_regs <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>% rename(id = eid)
+meds_regs <- read.csv('gp_registrations.txt', sep='\t', header=TRUE, quote='') %>% 
+  rename(id = eid)
 meds_presc <- data.table::fread('gp_scripts.csv', sep='\t', header=TRUE, quote='') %>% 
   as.data.frame() %>%
   rename(id = eid)
@@ -180,8 +187,6 @@ meds_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, qu
 gp_data <- unique(c(meds_regs$id, meds_presc$id, meds_diagnoses$id))
 
 # number of unique dates among prescriptions and GP diagnoses per person
-
-
 # the diagnoses and prescriptions will also be used for primary care contact
 meds_diagnoses$event_dt <- as.Date(meds_diagnoses$event_dt, format = '%d/%m/%Y')
 meds_diagnoses <- merge(meds_diagnoses, time_zero, by = 'id')
@@ -194,51 +199,79 @@ meds_presc <- meds_presc %>%
   rename(event_dt = issue_date)
 
 gp_all <- rbind(meds_presc, meds_diagnoses)
+gp_all <- merge(gp_all, subset(hear, select = c(id, data_provider_last_gp)),
+                by = 'id', all = TRUE)
+
+## for GP data, calculate the number of GP visits in the last five years
+## before time 0
+# set GP data censoring date
+gp_all$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
+gp_all$censor_date_gp[gp_all$data_provider_last_gp == '1'] <-
+  zoo::as.Date('30/06/2017', format = '%d/%m/%Y')
+gp_all$censor_date_gp[gp_all$data_provider_last_gp == '2'] <-
+  zoo::as.Date('31/05/2017', format = '%d/%m/%Y')
+gp_all$censor_date_gp[gp_all$data_provider_last_gp == '3'] <-
+  zoo::as.Date('31/08/2016', format = '%d/%m/%Y')
+gp_all$censor_date_gp[gp_all$data_provider_last_gp == '4'] <-
+  zoo::as.Date('30/09/2017', format = '%d/%m/%Y')
+
 
 # for events and prescriptions, remove duplicate entries for each date per ID
 gp_contact <- gp_all %>%
-  filter(event_dt < date_hear_loss_any) %>%
+  # keep only events before HL, but no more than 5 years before,
+  filter(event_dt < date_hear_loss_any & 
+           event_dt > date_hear_loss_any-5*365.25) %>%
   distinct(id, event_dt, .keep_all = TRUE) %>%
   group_by(id) %>%
   mutate(gp_contact = n()) %>%
   ungroup() %>%
-  select(id, gp_contact) %>%
   distinct(id, .keep_all = TRUE)
+
+# label participants without GP data in the period preceding HL, so 
+# that we can remove them later
+gp_contact$change_to_na <- 0
+gp_contact$change_to_na[
+  gp_contact$censor_date_gp < gp_contact$date_hear_loss_any] <- 1 
+gp_contact <- gp_contact %>%
+  select(id, gp_contact, change_to_na)
 
 # set those with gp data but NAs in gp_contact to 0; the rest are true NAs
 gp_contact <- merge(gp_contact, time_zero, by = 'id', all = TRUE)
 gp_contact$gp_contact[is.na(gp_contact$gp_contact) & gp_contact$id %in% gp_data] <- 0
+gp_contact$gp_contact[gp_contact$change_to_na == 1] <- NA
+gp_contact$change_to_na <- NULL
 
 # merge both sources and create new variable for any healthcare contact
 inpatient_contact$date_hear_loss_any <- NULL; gp_contact$date_hear_loss_any <- NULL
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
 hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
-# categorise inpatient contact
+# categorise
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact == 0] <- '0' # 0
 hear$inpatient_contact_cat[hear$inpatient_contact == 1] <- '1' # 1
 hear$inpatient_contact_cat[hear$inpatient_contact == 2] <- '2' # 2
 hear$inpatient_contact_cat[hear$inpatient_contact >= 3 & 
-                             hear$inpatient_contact <= 4] <- '3-4' # 3-4
-hear$inpatient_contact_cat[hear$inpatient_contact >= 5 & 
-                             hear$inpatient_contact <= 6] <- '5-6' # 5-6
-hear$inpatient_contact_cat[hear$inpatient_contact >= 7]  <- '7+' # 7+
+                             hear$inpatient_contact <= 5] <- '3-5' # 3-5
+hear$inpatient_contact_cat[hear$inpatient_contact >= 5]  <- '5+' # 5+
 hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
 
+hear$gp_contact_cat <- NA
+hear$gp_contact_cat[hear$gp_contact == 0] <- '0'
 
-## for GP data, calculate the number of GP visits in the last full year
-## before time 0
-# set GP data censoring date
-hear$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
-hear$censor_date_gp[hear$data_provider_last_gp == '1'] <-
-  zoo::as.Date('30/06/2017', format = '%d/%m/%Y')
-hear$censor_date_gp[hear$data_provider_last_gp == '2'] <-
-  zoo::as.Date('31/05/2017', format = '%d/%m/%Y')
-hear$censor_date_gp[hear$data_provider_last_gp == '3'] <-
-  zoo::as.Date('31/08/2016', format = '%d/%m/%Y')
-hear$censor_date_gp[hear$data_provider_last_gp == '4'] <-
-  zoo::as.Date('30/09/2017', format = '%d/%m/%Y')
+hear$gp_contact_cat[hear$gp_contact > 0 & 
+                      hear$gp_contact <= 20] <- '1' # 4x/year
 
+hear$gp_contact_cat[hear$gp_contact > 20 & 
+                      hear$gp_contact <= 45] <- '2' # 9x/year
+
+hear$gp_contact_cat[hear$gp_contact > 45 & 
+                      hear$gp_contact <= 75] <- '3' # 15x/year
+
+hear$gp_contact_cat[hear$gp_contact > 75 & 
+                      hear$gp_contact <= 110] <- '4' # 22x/year
+
+hear$gp_contact_cat[hear$gp_contact > 110] <- '5'
+hear$gp_contact_cat <- as.factor(hear$gp_contact_cat)
 
 
 ## hospital specialty
@@ -248,7 +281,8 @@ diagnoses_dates <- rename(diagnoses_dates, id = eid)
 diagnoses_dates <- merge(diagnoses_dates, time_zero, by = 'id', all = TRUE)
 
 hosp_spec <- diagnoses_dates %>%
-  filter(epistart < date_hear_loss_any) %>%
+  filter(epistart < date_hear_loss_any &
+           epistart > date_hear_loss_any-5*365.25) %>%
   distinct(id, tretspef_uni) %>%
   group_by(id) %>%
   mutate(specialty_n = n()) %>%
@@ -259,8 +293,7 @@ hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 0] <- '0' # 0
 hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 1] <- '1' # 1
 hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 2] <- '2' # 2
 hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 3] <- '3' 
-hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 4] <- '4' 
-hosp_spec$specialty_n_cat[hosp_spec$specialty_n >= 5]  <- '5+' # 5+
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n >= 4]  <- '4+' # 4+
 
 # NA were not admitted so set to 0
 hear <- merge(hear, hosp_spec, by = 'id', all.x = TRUE)
@@ -380,7 +413,7 @@ hear_PP$dementia[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 &
 hear_PP$death[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
                 hear_PP$death == 1 & hear_PP$death_date > hear_PP$censor_date] <- 0
 hear_PP$follow_loss[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                hear_PP$follow_loss == 1 & hear_PP$follow_loss_date > hear_PP$censor_date] <- 0
+                      hear_PP$follow_loss == 1 & hear_PP$follow_loss_date > hear_PP$censor_date] <- 0
 
 # calculate follow-up
 hear$follow_up <- as.numeric(difftime(hear$censor_date, 
