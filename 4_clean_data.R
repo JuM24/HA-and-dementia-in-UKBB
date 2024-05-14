@@ -9,7 +9,7 @@ source('0_helper_functions.R')
 hear <- readRDS('hearing_masterfile_prepped.rds')
 
 # file with censoring dates
-cens_dates <- readxl::read_excel('censoring_dates_new.xlsx')
+cens_dates <- readxl::read_excel('censoring_dates.xlsx')
 cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
 
 # We are interested in only those participants that have hearing loss; 
@@ -183,11 +183,11 @@ gp_data <- unique(c(meds_regs$id, meds_presc$id, meds_diagnoses$id))
 
 
 # the diagnoses and prescriptions will also be used for primary care contact
-meds_diagnoses$date_primary <- as.Date(meds_diagnoses$event_dt, format = '%d/%m/%Y')
+meds_diagnoses$event_dt <- as.Date(meds_diagnoses$event_dt, format = '%d/%m/%Y')
 meds_diagnoses <- merge(meds_diagnoses, time_zero, by = 'id')
 meds_diagnoses <- subset(meds_diagnoses, select = c(id, event_dt, date_hear_loss_any))
 
-meds_presc$event_dt <- as.Date(meds_presc$issue_date, format = '%d/%m/%Y')
+meds_presc$issue_date <- as.Date(meds_presc$issue_date, format = '%d/%m/%Y')
 meds_presc <- merge(meds_presc, time_zero, by = 'id')
 meds_presc <- meds_presc %>% 
   select(id, issue_date, date_hear_loss_any) %>%
@@ -226,22 +226,41 @@ hear$inpatient_contact_cat[hear$inpatient_contact >= 7]  <- '7+' # 7+
 hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
 
 
+## for GP data, calculate the number of GP visits in the last full year
+## before time 0
+# set GP data censoring date
+hear$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
+hear$censor_date_gp[hear$data_provider_last_gp == '1'] <-
+  zoo::as.Date('30/06/2017', format = '%d/%m/%Y')
+hear$censor_date_gp[hear$data_provider_last_gp == '2'] <-
+  zoo::as.Date('31/05/2017', format = '%d/%m/%Y')
+hear$censor_date_gp[hear$data_provider_last_gp == '3'] <-
+  zoo::as.Date('31/08/2016', format = '%d/%m/%Y')
+hear$censor_date_gp[hear$data_provider_last_gp == '4'] <-
+  zoo::as.Date('30/09/2017', format = '%d/%m/%Y')
 
 
 
 ## hospital specialty
 diagnoses_dates <- read.csv('hesin.txt', sep='\t')  # UKB category 2006
 diagnoses_dates$epistart <- as.Date(diagnoses_dates$epistart, format = '%d/%m/%Y')
+diagnoses_dates <- rename(diagnoses_dates, id = eid)
+diagnoses_dates <- merge(diagnoses_dates, time_zero, by = 'id', all = TRUE)
+
 hosp_spec <- diagnoses_dates %>%
-  distinct(eid, tretspef_uni) %>%
-  group_by(eid) %>%
+  filter(epistart < date_hear_loss_any) %>%
+  distinct(id, tretspef_uni) %>%
+  group_by(id) %>%
   mutate(specialty_n = n()) %>%
-  distinct(eid, .keep_all = TRUE) %>%
-  rename(id = eid)
+  distinct(id, .keep_all = TRUE)
 # categorise
-hosp_spec$specialty_n_cat <- as.character(hosp_spec$specialty_n)
-hosp_spec$specialty_n_cat[hosp_spec$specialty_n %in% c(6, 7)] <- '7'
-hosp_spec$specialty_n_cat[hosp_spec$specialty_n >= 8] <- '8'
+hosp_spec$specialty_n_cat <- NA
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 0] <- '0' # 0
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 1] <- '1' # 1
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 2] <- '2' # 2
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 3] <- '3' 
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n == 4] <- '4' 
+hosp_spec$specialty_n_cat[hosp_spec$specialty_n >= 5]  <- '5+' # 5+
 
 # NA were not admitted so set to 0
 hear <- merge(hear, hosp_spec, by = 'id', all.x = TRUE)
@@ -373,4 +392,4 @@ hear_PP$follow_up <- as.numeric(difftime(hear_PP$censor_date,
 saveRDS(hear, file = 'hearing_masterfile_ITT.rds')
 saveRDS(hear_PP, file = 'hearing_masterfile_PP.rds')
 
-rm(list = ls())
+rm(list = ls()); gc()
