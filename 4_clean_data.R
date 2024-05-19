@@ -206,13 +206,13 @@ gp_all <- merge(gp_all, subset(hear, select = c(id, data_provider_last_gp)),
 # set GP data censoring date
 gp_all$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '1'] <-
-  zoo::as.Date('30/06/2017', format = '%d/%m/%Y')
-gp_all$censor_date_gp[gp_all$data_provider_last_gp == '2'] <-
   zoo::as.Date('31/05/2017', format = '%d/%m/%Y')
+gp_all$censor_date_gp[gp_all$data_provider_last_gp == '2'] <-
+  zoo::as.Date('31/03/2017', format = '%d/%m/%Y')
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '3'] <-
-  zoo::as.Date('31/08/2016', format = '%d/%m/%Y')
+  zoo::as.Date('31/05/2016', format = '%d/%m/%Y')
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '4'] <-
-  zoo::as.Date('30/09/2017', format = '%d/%m/%Y')
+  zoo::as.Date('31/08/2017', format = '%d/%m/%Y')
 
 # minimum censor date between GP ascertainment and loss to follow-up
 gp_all <- gp_all %>%
@@ -236,7 +236,7 @@ gp_contact$change_to_na <- 0
 gp_contact$change_to_na[
   gp_contact$censor_date_gp < gp_contact$date_hear_loss_any] <- 1 
 gp_contact <- gp_contact %>%
-  select(id, gp_contact, change_to_na)
+  select(id, gp_contact, censor_date_gp, censor_date_any, change_to_na)
 
 # set those with gp data but NAs in gp_contact to 0; the rest are true NAs
 gp_contact <- merge(gp_contact, time_zero, by = 'id', all = TRUE)
@@ -245,11 +245,27 @@ gp_contact$gp_contact[gp_contact$change_to_na == 1] <- NA
 gp_contact$change_to_na <- NULL
 
 # merge both sources and create new variable for any healthcare contact
-inpatient_contact$date_hear_loss_any <- NULL
+inpatient_contact <- inpatient_contact %>%
+  select(-c(date_hear_loss_any, censor_date))
 gp_contact <- gp_contact %>%
   select(-c(date_hear_loss_any, censor_date))
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
-hear <- merge(hear, subset(health_contact, select = -c(censor_date)), by = 'id', all.x = TRUE)
+hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
+
+# for those without GP contact, we have no GP data providers; use
+# the inpatient provider for those participants
+hear$censor_date_gp[!is.na(hear$censor_date_gp) & 
+                      hear$data_provider_freq == 'HES'] <-
+  zoo::as.Date('31/05/2016', format = '%d/%m/%Y')
+
+hear$censor_date_gp[!is.na(hear$censor_date_gp) & 
+                      hear$data_provider_freq == 'SMR'] <-
+  zoo::as.Date('31/03/2017', format = '%d/%m/%Y')
+
+hear$censor_date_gp[!is.na(hear$censor_date_gp) & 
+                      hear$data_provider_freq == 'PEDW'] <-
+  zoo::as.Date('31/08/2017', format = '%d/%m/%Y')
+
 # categorise
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact == 0] <- '0' # 0
@@ -305,8 +321,10 @@ hear <- merge(hear, hosp_spec, by = 'id', all.x = TRUE)
 hear$specialty_n_cat[is.na(hear$specialty_n_cat)] <- '0'
 hear$specialty_n_cat <- as.factor(hear$specialty_n_cat)
 
-
-
+# due to low numbers of non-white participants, let's set ethnicity to binary
+hear$ethnicity_simple <- as.character(hear$ethnicity)
+hear$ethnicity_simple[hear$ethnicity != '1'] <- '2'
+hear$ethnicity_simple <- as.factor(hear$ethnicity_simple)
 
 
 
