@@ -53,13 +53,14 @@ library(survey)
 source('0_helper_functions.R')
 
 # set file name
-file_name <- ''
+file_name <- 'hearing_masterfile_subsequent_healthcare_ITT.rds'
 
 hear <- readRDS(file_name)
 
 set.seed(6)
 m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
-                 srt_min_USE + data_provider_freq, data = hear,
+                 srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
+                 data = hear,
                  method = 'quick', distance = 'bart', estimand = 'ATE',
                  distance.options = list(seed = 6))
            
@@ -81,11 +82,10 @@ plot(m.out, type = 'density', interactive = FALSE,
 # approach to calculate CIs using `syvglm()`
 dsn = svydesign(ids =~subclass, weights=~weights, data=md)
 fit = svyglm(dementia ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
-               g_USE + srt_min_USE + data_provider_freq,
+               g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
               design = dsn, family = quasibinomial())
 marginaleffects::comparisons(fit,
                                  variables = c('hear_aid_any'),
-                                 vcov = TRUE,
                                  wts = '(weights)',
                                  comparison = 'lnratioavg',
                                  transform = 'exp')
@@ -110,10 +110,374 @@ ggplot(df_surv, aes(x = time, y = estimate, color = strata, linetype = strata)) 
 
 # HRs
 fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any + age_USE + education_USE + sex + 
-                            deprivation + g_USE + srt_min_USE + data_provider_freq, 
+                            deprivation + g_USE + srt_min_USE + data_provider_freq +
+                            + tinnitus_sr_USE + ethnicity, robust = TRUE,
                           data = md, weights = weights)
 summary(fit_hr)$coefficients['hear_aid_any', 2] # point estimate
 broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
+
+
+
+
+
+
+
+
+## Effect of emulated randomisation to HA on subsequent healthcare contact
+## - re-run `4_clean_data.R`, but change the following:
+
+# 1. run `filter(date > date_hear_loss_any & date < censor_date_any)`
+# instead of `filter(date < date_hear_loss_any &
+#               date > date_hear_loss_any-5*365.25)`
+
+# 2. run `filter(event_dt > date_hear_loss_any & event_dt < cansor_date)`
+# instead of `filter(event_dt < date_hear_loss_any & event_dt > date_hear_loss_any-5*365.25)`
+
+# 3. do not run `gp_contact$gp_contact[gp_contact$change_to_na == 1] <- NA`
+
+## keep only participants with at least one year of follow-up
+hear_inpatient <- hear %>%
+  filter(difftime(censor_date, date_hear_loss_any) >= 365.25)
+hear_gp <- hear %>%
+  filter(!is.na(gp_contact) & (censor_date_any - date_hear_loss_any) >= 365.25)
+
+# average number of inpatient visits per year of follow-up
+hear_inpatient$inpatient_contact_avg <- 
+  hear_inpatient$inpatient_contact/hear_inpatient$follow_up
+
+hear_gp$follow_up_any <- as.numeric(difftime(hear_gp$censor_date_any, 
+                                             hear_gp$date_hear_loss_any, 
+                                             units = 'days'))/365.25
+hear_gp$gp_contact_avg <-
+  hear_gp$gp_contact/hear_gp$follow_up_any
+
+# categorisation of inpatient visits
+hear_inpatient$inpatient_contact_cat <- NA
+hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg == 0] <- '0'
+hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0 & 
+                             hear_inpatient$inpatient_contact_avg <= 0.25] <- '1'
+hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0.25 & 
+                           hear_inpatient$inpatient_contact_avg <= 0.5] <- '2'
+hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0.5 & 
+                           hear_inpatient$inpatient_contact_avg <= 1] <- '3'
+hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 1] <- '4'
+
+
+hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
+
+hear_gp$gp_contact_cat <- NA
+hear_gp$gp_contact_cat[hear_gp$gp_contact_avg >= 0 & 
+                           hear_gp$gp_contact_avg <= 3] <- '0'
+hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 3 & 
+                           hear_gp$gp_contact_avg <= 12] <- '1'
+hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 12 & 
+                           hear_gp$gp_contact_avg <= 24] <- '3'
+hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 24] <- '4'
+hear_gp$gp_contact_cat <- as.factor(hear_gp$gp_contact_cat)
+hear_gp$gp_contact_cat_binary <- 0
+hear_gp$gp_contact_cat_binary[hear_gp$gp_contact_cat != '0'] <- 1
+table(hear_gp$gp_contact_cat)
+
+
+# comparisons of each group with zero group for inpatient contact
+m.inpatient <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
+                       data = hear_inpatient,
+                       method = 'quick', distance = 'bart', estimand = 'ATE',
+                       distance.options = list(seed = 6))
+md_inpatient <- match.data(m.inpatient)
+
+for (group in as.character(seq(1, 4))){
+  subset <- filter(md_inpatient, inpatient_contact_cat %in% c('0', group))
+  subset$inpatient_contact_cat <- as.factor(as.character(subset$inpatient_contact_cat))
+  dsn = svydesign(ids =~subclass, weights=~weights, data=subset)
+  fit = svyglm(inpatient_contact_cat ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
+                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
+               design = dsn, family = quasibinomial())
+  subset_comparison <- marginaleffects::comparisons(fit,
+                                                    variables = c('hear_aid_any'),
+                                                    wts = '(weights)',
+                                                    comparison = 'lnratioavg',
+                                                    transform = 'exp')
+  print(subset_comparison)
+}
+
+
+# comparisons of each group with zero group for GP contact
+m.gp <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
+                       data = hear_inpatient,
+                       method = 'quick', distance = 'bart', estimand = 'ATE',
+                       distance.options = list(seed = 6))
+md_gp <- match.data(m.gp)
+
+for (group in as.character(seq(1, 4))){
+  subset <- filter(md_gp, gp_contact_cat %in% c('0', group))
+  subset$gp_contact_cat <- as.factor(as.character(subset$gp_contact_cat))
+  dsn = svydesign(ids =~subclass, weights=~weights, data=subset)
+  fit = svyglm(gp_contact_cat ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
+                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
+               design = dsn, family = quasibinomial())
+  subset_comparison <- marginaleffects::comparisons(fit,
+                                                    variables = c('hear_aid_any'),
+                                                    wts = '(weights)',
+                                                    comparison = 'lnratioavg',
+                                                    transform = 'exp')
+  print(subset_comparison)
+}
+
+
+
+## TODO: Effect of pre-randomisation healthcare contact on dementia
+
+## primary care
+hear <- hear %>%
+  # remove participants with GP censoring before time 0
+  filter(!is.na(gp_contact) & censor_date_gp >= date_hear_loss_any)
+
+# determine date one year before time zero
+hear$start_gp <- hear$date_hear_loss_any - 365
+
+
+
+
+
+
+## Effect of confounders on dementia
+hear$prop_score <- scale(m.out$distance)[,1]
+fit <- glm(dementia ~ prop_score + hear_aid_any,
+           data = hear, family = binomial())
+summary(fit)
+
+cov_robust <- sandwich::vcovHC(fit, type = 'HC3')
+se <- sqrt(cov_robust[2,2])
+critical_value <- qt(0.975, df = df.residual(fit))
+lower_bound <- exp(coef(fit)[2] - critical_value * se)
+upper_bound <- exp(coef(fit)[2] + critical_value * se)
+
+
+dsn = svydesign(ids =~subclass, weights=~1, data=md)
+fit = svyglm(dementia ~ distance + hear_aid_any,
+             design = dsn, family = quasibinomial())
+
+marginaleffects::comparisons(fit,
+                             variables = 'prop_score',
+                             wts = NULL,
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+
+
+
+
+## Analysis on imputed dataset (as opposed to removing missing values)
+library(future)
+
+hear <- readRDS('hearing_masterfile_prepped.rds')
+
+# file with censoring dates
+cens_dates <- readxl::read_excel('censoring_dates.xlsx')
+cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
+
+# We are interested in only those participants that have hearing loss; 
+# thus, we remove participants without it. We do not keep those with congenital hearing loss.
+# we also remove those with cochlear implants, as they cannot remove them before the SRT
+hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
+                 is.na(hear_congenital) & cochl_impl_any == 0 | 
+                 (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
+
+# remove those with HL before baseline assessment due to strong selection into study
+hear <- filter(hear, date_hear_loss_any >= date_0)
+
+# for those that remain, cochlear implant date will become HA date of it's earlier than HA date
+hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & 
+                          hear$hear_aid_any == 1 & hear$cochl_impl_any == 1) |
+                         (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)] <- 
+  hear$date_cochl_impl_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & 
+                              hear$hear_aid_any == 1 & hear$cochl_impl_any == 1) |
+                             (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
+
+
+# Remove those with dementia before or at the same date as hearing loss.
+hear <- filter(hear, dementia == 0 | (date_hear_loss_any < dementia_date))
+
+# Remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline.
+no_aid_date <- filter(hear, hear_aid_any == 0 & hear_aid_nodate == 1)
+hear <- filter(hear, !id %in% no_aid_date$id) %>%
+  filter(hear_loss_any == 0 | !is.na(date_hear_loss_any))
+
+# Select only those that were diagnosed with HL before getting HA
+hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_any))
+
+
+
+# before determining the assessment to use, set dummy values to NAs
+# for participants that partook in the assessments (only those without
+# assessments are "truly" missing)
+
+# get info on SiN administration
+data_all <- readRDS('main_vars.Rds') %>%
+  select(eid, starts_with(c('X4268.', 'X4275.'))) %>%
+  rename(id = eid)
+
+hear <- merge(hear, data_all, by = 'id', all.x = TRUE)
+
+
+# education, g, srt_min, tinnitus_sr
+suffixes <- c('_0', '_1', '_2', '_3')
+variables <- c('education', 'g', 'tinnitus_sr') 
+
+# if they participated at the assessment, but have NA, then they will be imputed
+for (suf in suffixes){
+  for (var in variables){
+    var_suf <- paste0(var, suf)
+    date_suf <- paste0('date', suf)
+    hear[(!is.na(hear[[date_suf]]) & is.na(hear[[var_suf]])), var_suf] <- 999
+  }
+}
+
+# the SiN is a special case, since not everybody was given the test
+# those that were given the test but refused or did not complete it,
+# will get a dummy value
+hear$srt_min_0[hear$X4268.0.0 %in% c(-1, 9) & hear$X4275.0.0 %in% c(-1, 9)] <- 999
+hear$srt_min_1[hear$X4268.1.0 %in% c(-1, 9) & hear$X4275.1.0 %in% c(-1, 9)] <- 999
+hear$srt_min_2[hear$X4268.2.0 %in% c(-1, 9) & hear$X4275.2.0 %in% c(-1, 9)] <- 999
+hear$srt_min_3[hear$X4268.3.0 %in% c(-1, 9) & hear$X4275.3.0 %in% c(-1, 9)] <- 999
+
+# determine the assessment that is closest to HL start and which will be used for covariate measurement 
+hear <- find_closest_non_missing(hear, 'education', date_hear_loss_any = 'date_hear_loss_any')
+hear <- find_closest_non_missing(hear, 'g', date_hear_loss_any = 'date_hear_loss_any')
+hear <- find_closest_non_missing(hear, 'srt_min', date_hear_loss_any = 'date_hear_loss_any')
+hear <- find_closest_non_missing(hear, 'tinnitus_sr', date_hear_loss_any = 'date_hear_loss_any')
+hear <- find_closest_non_missing(hear, 'soc_isol', date_hear_loss_any = 'date_hear_loss_any')
+
+# Those without imputed censoring date get the value '0' for data provider value
+hear$data_provider_last[is.na(hear$data_provider_last)] <- '0'
+hear$data_provider_last <- as.factor(hear$data_provider_last)
+# Same for data provider used as confounder
+hear$data_provider_freq[is.na(hear$data_provider_freq)] <- '0'
+hear$data_provider_freq <- as.factor(hear$data_provider_freq)
+
+# set the correct data censoring date based on data provider
+hear$data_cens_date <- NA
+hear$data_cens_date[hear$data_provider_last == 'HES'] <- 
+  cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'HES']
+hear$data_cens_date[hear$data_provider_last == 'SMR'] <- 
+  cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'SMR']
+hear$data_cens_date[hear$data_provider_last == 'PEDW'] <- 
+  cens_dates$date[cens_dates$disorder == 'dementia' & cens_dates$data_provider == 'PEDW']
+hear$data_cens_date[hear$data_provider_last == '0'] <- 
+  min(cens_dates$date[cens_dates$disorder == 'dementia'])
+hear$data_cens_date <- zoo::as.Date(hear$data_cens_date)
+
+# set the censoring dates to the date that occurs earlier.
+hear <- hear %>%
+  mutate(censor_date = reduce(across(c('dementia_date', 'death_date', 'follow_loss_date',
+                                       'data_cens_date')), pmin, na.rm = TRUE))
+
+# for those that are labelled as having experienced the outcome after the censoring date, set the outcome to 0
+hear$dementia[hear$censor_date < hear$dementia_date] <- 0
+hear$death[hear$censor_date < hear$death_date] <- 0
+
+# Some will have experienced HL only after the censoring date; remove those.
+hear <- filter(hear, date_hear_loss_any < censor_date)
+
+# age at HL
+hear$age_USE <- as.numeric(difftime(hear$date_hear_loss_any, 
+                                    hear$birth_date, units = 'days'))/365.25
+
+# for mood disorders, remove dates after starting date 
+hear$mood_dis[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- 0
+hear$mood_dis_date[hear$mood_dis == 1 & hear$mood_dis_date >= hear$date_hear_loss_any] <- NA
+
+
+# define the 'grace period'. This is the period from HL in which start of use of 
+# HA will still lead to the classification as 'exposed'
+hear$hear_loss_time <- as.numeric(difftime(hear$date_hear_aid_any, 
+                                           hear$date_hear_loss_any, units='days'))/365.25
+hear$grace_period[hear$hear_loss_time <= 1 | hear$hear_aid_any == 0] <- 1
+hear$grace_period[hear$hear_loss_time > 1] <- 0
+# for those with HA beyond the grace period, set HA status to 0
+hear$hear_aid_any[hear$grace_period == 0] <- 0
+
+# just keep individuals with assessment data <=5 years removed from the date of HL
+hear <- hear %>% 
+  filter(min_diff_education <= 5*365.25 & 
+           min_diff_g <= 5*365.25 & 
+           min_diff_srt_min <= 5*365.25 &
+           min_diff_tinnitus_sr <= 5*365.25)
+hear[hear == 999] <- NA
+
+# calculate follow-up
+hear$follow_up <- as.numeric(difftime(hear$censor_date, 
+                                      hear$date_hear_loss_any, units = 'days'))/365.25
+
+
+# some lifestyle factors used for imputation
+other_predictors <- readRDS('D://Job/Projects/Pseudo-scales/pseudoscales GitHub/test_folder_pseudoscales/output_files/covariates.Rds') %>%
+  select(id, alc_freq_0, smoking_0, phys_act_0, waist_0)
+hear <- merge(hear, other_predictors, by = 'id', all.x = TRUE)
+
+# subset and choose the variables to use for imputation
+subsample <- hear %>%
+  # remove those that were not given the SiN or did not participate
+  select(id, age_USE, sex, education_USE, deprivation, g_USE, srt_min_USE,
+         data_provider_freq, tinnitus_sr_USE, ethnicity, data_provider_freq,
+         alc_freq_0, smoking_0, phys_act_0, waist_0, hear_aid_any,
+         follow_up, dementia)
+# change rownames to be able to later merge back
+rownames(subsample) <- subsample$id
+subsample$id <- NULL
+
+# to factors
+subsample <- subsample %>% 
+  mutate(across(c(sex, education_USE, data_provider_freq, ethnicity, 
+                  tinnitus_sr_USE, dementia), as.factor))
+subsample$dementia <- as.numeric(subsample$dementia)
+
+
+## perform MICE
+perc_missing_0 <- 100*sum(is.na(subsample))/(nrow(subsample)*ncol(subsample))
+plan(multicore, workers = 15)
+options(future.globals.maxSize= 1048576000)
+imp <- mice::futuremice(subsample, 
+                        m = ifelse(perc_missing_0 < 10, 10, perc_missing_0),
+                        parallelseed = 24,
+                        method = 'rf', 
+                        maxit = 20)
+
+
+## match the imputed datasets
+library(MatchThem)
+covariates = c('age_USE', 'sex', 'education_USE', 
+               'deprivation', 'g_USE', 'srt_min_USE', 
+               'data_provider_freq', 'tinnitus_sr_USE',
+               'ethnicity') 
+formula <- as.formula(paste0('hear_aid_any ~ ', paste(covariates, collapse = '+')))
+m.out <- matchthem(datasets = imp, 
+                   formula = formula,
+                   method = 'quick', 
+                   distance = 'bart', 
+                   estimand = 'ATE',
+                   distance.options = list(seed = 6))
+
+
+## check matching quality
+cobalt::love.plot(m.out, stars = 'raw')
+
+
+
+## run the analysis on each imputed dataset
+fit_glm <- with(data = m.out, svyglm(dementia ~ hear_aid_any * (age_USE + education_USE + sex + deprivation + 
+                                                                  g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity), 
+                                     family = quasibinomial()), cluster = TRUE)
+
+marginaleffects::avg_comparisons(fit_glm,
+                                 vcov = 'HC3',
+                                 variables = c('hear_aid_any'),
+                                 wts = '(weights)',
+                                 comparison = 'lnratioavg')
+# INSERT CODE FROM LOCAL IMPUTATION
+
 
 
 
