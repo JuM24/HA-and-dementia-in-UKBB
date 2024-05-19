@@ -249,7 +249,7 @@ inpatient_contact$date_hear_loss_any <- NULL
 gp_contact <- gp_contact %>%
   select(-c(date_hear_loss_any, censor_date))
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
-hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
+hear <- merge(hear, subset(health_contact, select = -c(censor_date)), by = 'id', all.x = TRUE)
 # categorise
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact == 0] <- '0' # 0
