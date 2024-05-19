@@ -245,7 +245,9 @@ gp_contact$gp_contact[gp_contact$change_to_na == 1] <- NA
 gp_contact$change_to_na <- NULL
 
 # merge both sources and create new variable for any healthcare contact
-inpatient_contact$date_hear_loss_any <- NULL; gp_contact$date_hear_loss_any <- NULL
+inpatient_contact$date_hear_loss_any <- NULL
+gp_contact <- gp_contact %>%
+  select(-c(date_hear_loss_any, censor_date))
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
 hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
 # categorise
