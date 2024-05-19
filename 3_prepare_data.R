@@ -3,22 +3,18 @@ library(tidyverse)
 library(zoo)
 
 source('0_helper_functions.R')
+opt_outs <- read.csv('participant_opt_out.csv')
 
 # import the file with all the hearing loss and hearing aid UKB variables
 # field IDs 2247, 2257, 4849, 3393, 20019, 20021, 131258, 131260, 131259, 131261, 4792, 132460
 
 hear <- readRDS('main_vars.Rds') %>%
-  # TODO: remove line below when sample n confusion is clarified
-  filter(!is.na(X31.0.0)) %>%
+  filter(!eid %in% opt_outs$id) %>%
   select(eid, starts_with(c('X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 
                             'X20021.', 'X131258.', 'X131260.', 'X131259.', 'X131261.',
                             'X4792.', 'X132460.')))
 hear$eid <- as.character(hear$eid)
 
-# remove people who have opted out of the study
-opt_outs <- read.csv('participant_opt_out.csv')
-opt_outs$id <- as.character(opt_outs$id)
-hear <- filter(hear, !eid %in% opt_outs$id)
 
 # change colnames and code emtpy strings as NAs
 colnames(hear) <- c('id', 'hear_dif_0', 'hear_dif_1', 'hear_dif_2', 'hear_dif_3', 
@@ -83,10 +79,10 @@ inpatient <- filter(inpatient, code %in% diagnosis_codes$code[diagnosis_codes$so
 inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
 
 # GP diagnoses
-gp_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, quote='') # field ID 42040
-gp_diagnoses <- as.data.frame(gp_diagnoses)
-gp_diagnoses <- subset(gp_diagnoses, select = c(eid, data_provider, event_dt, 
-                                                read_2, read_3))
+gp_diagnoses <- data.table::fread('gp_clinical.txt', sep='\t', header=TRUE, quote='') %>%
+  as.data.frame() %>%
+  select(eid, data_provider, event_dt, read_2, read_3) %>%
+  filter(!eid %in% opt_outs$id)
 colnames(gp_diagnoses) <- c('id', 'data_provider', 'date_primary', 'read2', 'read3')
 gp_diagnoses <- filter(gp_diagnoses, 
                        (read2 %in% diagnosis_codes$code[diagnosis_codes$source == 'read2']) | # keep only relevant diagnoses
@@ -316,10 +312,10 @@ hear <- hear %>%
 
 # now let's include the objective hearing assessment (SRT)
 # create a new variable indicating SRT for 'better' ear for each visit (lower score means better hearing)
-hear <- transform(hear, srt_min_0 = pmin(srt_r_0, srt_l_0, na.rm = TRUE))
-hear <- transform(hear, srt_min_1 = pmin(srt_r_1, srt_l_1, na.rm = TRUE))
-hear <- transform(hear, srt_min_2 = pmin(srt_r_2, srt_l_2, na.rm = TRUE))
-hear <- transform(hear, srt_min_3 = pmin(srt_r_3, srt_l_3, na.rm = TRUE))
+hear <- transform(hear, srt_min_0 = pmin(srt_r_0, srt_l_0, na.rm = FALSE))
+hear <- transform(hear, srt_min_1 = pmin(srt_r_1, srt_l_1, na.rm = FALSE))
+hear <- transform(hear, srt_min_2 = pmin(srt_r_2, srt_l_2, na.rm = FALSE))
+hear <- transform(hear, srt_min_3 = pmin(srt_r_3, srt_l_3, na.rm = FALSE))
 
 # new variable indicating hearing problems according to any of our criteria: (1) self-report (2 indicates affirmative answers to both questions, 
 # 99 indicates deafness),(2) hearing loss acc. to our search of the EHR, (3) SRT, and (4) first-occurrences variables in UKB
@@ -464,4 +460,4 @@ hear$cochl_impl_any[!is.na(hear$date_cochl_impl_any)] <- 1
 
 
 saveRDS(hear, file = 'hearing_masterfile_prepped.rds')
-rm(list = ls())
+rm(list = ls()); gc()
