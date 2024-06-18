@@ -312,10 +312,23 @@ hear <- hear %>%
 
 # now let's include the objective hearing assessment (SRT)
 # create a new variable indicating SRT for 'better' ear for each visit (lower score means better hearing)
-hear <- transform(hear, srt_min_0 = pmin(srt_r_0, srt_l_0, na.rm = FALSE))
-hear <- transform(hear, srt_min_1 = pmin(srt_r_1, srt_l_1, na.rm = FALSE))
-hear <- transform(hear, srt_min_2 = pmin(srt_r_2, srt_l_2, na.rm = FALSE))
-hear <- transform(hear, srt_min_3 = pmin(srt_r_3, srt_l_3, na.rm = FALSE))
+hear <- transform(hear, srt_min_0 = pmin(srt_r_0, srt_l_0, na.rm = TRUE))
+hear <- transform(hear, srt_min_1 = pmin(srt_r_1, srt_l_1, na.rm = TRUE))
+hear <- transform(hear, srt_min_2 = pmin(srt_r_2, srt_l_2, na.rm = TRUE))
+hear <- transform(hear, srt_min_3 = pmin(srt_r_3, srt_l_3, na.rm = TRUE))
+
+# set to NA values for those participants that have hearing in both ears, 
+# but SRT data from only one ear (because they might hear better from the ear
+# for which we don't have data)
+hear$srt_min_0[(is.na(hear$srt_r_0) | is.na(hear$srt_l_0)) &
+                 !hear$hear_test_0 %in% c(11, 12)] <- NA
+hear$srt_min_1[(is.na(hear$srt_r_1) | is.na(hear$srt_l_1)) &
+                 !hear$hear_test_1 %in% c(11, 12)] <- NA
+hear$srt_min_2[(is.na(hear$srt_r_2) | is.na(hear$srt_l_2)) &
+                 !hear$hear_test_2 %in% c(11, 12)] <- NA
+hear$srt_min_3[(is.na(hear$srt_r_3) | is.na(hear$srt_l_3)) &
+                 !hear$hear_test_3 %in% c(11, 12)] <- NA
+
 
 # new variable indicating hearing problems according to any of our criteria: (1) self-report (2 indicates affirmative answers to both questions, 
 # 99 indicates deafness),(2) hearing loss acc. to our search of the EHR, (3) SRT, and (4) first-occurrences variables in UKB
