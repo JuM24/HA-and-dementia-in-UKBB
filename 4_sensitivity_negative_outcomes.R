@@ -2,12 +2,11 @@
 # c('hepatic', 'heart', 'respiratory', 'asthma', 'skin_dis', 'infect', 'flu',
 # 'appendicitis', 'fract_any', 'trans_acc')
 outcomes <- c('hepatic', 'heart', 'respiratory', 'asthma', 'skin_dis', 'infect', 
-              'flu', 'appendicitis', 'fract_any', 'trans_acc')
+              'flu', 'appendicitis', 'hip_fract', 'trans_acc')
 
 library(tidyverse)
 source('0_helper_functions.R')
 
-#TODO: remove healthcare contact bit, as we don't need it here
 
 for (outcome in outcomes){
   
@@ -141,9 +140,15 @@ for (outcome in outcomes){
                                         prob = c(prop_han, prop_ha)), hear_aid_any)) %>%
     ungroup()
   
+  # due to low numbers of non-white participants, let's set ethnicity to binary
+  hear$ethnicity_simple <- as.character(hear$ethnicity)
+  hear$ethnicity_simple[hear$ethnicity != '1'] <- '2'
+  hear$ethnicity_simple <- as.factor(hear$ethnicity_simple)
   
+  # calculate follow-up
+  hear$follow_up <- as.numeric(difftime(hear$censor_date, 
+                                        hear$date_hear_loss_any, units = 'days'))/365.25
   
-# INTENTION-TO-TREAT: assume no treatment switching; this is what we have for now in `hear`: 
-  # we defined HA use within the grace period, but did not look at treatment adherence beyond the baseline
   saveRDS(hear, file = paste0('hearing_masterfile_', outcome, '_ITT.rds'))
 }
+rm(list = ls()); gc()
