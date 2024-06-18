@@ -3,7 +3,7 @@ library(tidyverse)
 source('0_helper_functions.R')
 
 # file name
-file_name <- ''
+file_name <- 'hearing_masterfile_ITT.rds'
 
 hear <- readRDS(file_name)
 
@@ -65,33 +65,53 @@ han <- filter(hear, hear_aid_any == 0)
 nrow(filter(ha, dementia == 1 & dementia_date == censor_date))
 nrow(filter(han, dementia == 1 & dementia_date == censor_date))
 # death
-nrow(filter(ha, death == 1 & dementia == 0 & death_date == censor_date))
-nrow(filter(han, death == 1 & dementia == 0 & death_date == censor_date))
+nrow(filter(ha, death == 1 & dementia != 1 & death_date == censor_date))
+nrow(filter(han, death == 1 & dementia != 1 & death_date == censor_date))
+# loss to follow-up
+nrow(filter(ha, death != 1 & dementia != 1 & follow_loss_date == censor_date))
+nrow(filter(han, death != 1 & dementia != 1 & follow_loss_date == censor_date))
+# others
+nrow(filter(ha, death != 1 & dementia != 1 & follow_loss != 1))
+nrow(filter(han, death != 1 & dementia != 1 & follow_loss != 1))
+
+
+#### only for per-protocol! ####
 
 # hearing aid use start among non-HA
-han$ha_switch <- 0
-han$ha_switch[han$hear_aid_any == 0 & !is.na(han$date_hear_aid_any) & han$date_hear_aid_any > han$censor_date] <- 1
-nrow(filter(han, ha_switch == 1 & dementia == 0 & death == 0))
+han_switchers <- han %>%
+  filter(!is.na(date_hear_aid_any) & censor_date == date_hear_aid_any)
+han_nonswitchers <- han %>%
+  filter(is.na(date_hear_aid_any) | (censor_date != date_hear_aid_any)) 
 
-# hearing aid cessation among HA
-nrow(filter(ha, ha_cease == 1 & dementia == 0 & death == 0))
+ha_switchers <- ha %>%
+  filter(ha_cease == 1)
+ha_nonswitchers <- ha %>%
+  filter(ha_cease != 1)
 
-# "regular" censoring date (no death, no dementia, no switching from non-HA to HA)
-nrow(filter(ha, death == 0 & dementia == 0 & ha_cease == 0))
-nrow(filter(han, death == 0 & dementia == 0 & ha_switch == 0))
+# dementia
+nrow(filter(han_nonswitchers, dementia == 1 & dementia_date == censor_date))
+nrow(filter(ha_nonswitchers, dementia == 1 & dementia_date == censor_date))
+# death
+nrow(filter(han_nonswitchers, death == 1 & dementia != 1 & death_date == censor_date))
+nrow(filter(ha_nonswitchers, death == 1 & dementia != 1 & death_date == censor_date))
+# loss to follow-up
+nrow(filter(han_nonswitchers, death != 1 & dementia != 1 & follow_loss_date == censor_date))
+nrow(filter(ha_nonswitchers, death != 1 & dementia != 1 & follow_loss_date == censor_date))
+# others
+nrow(filter(han_nonswitchers, death != 1 & dementia != 1 & follow_loss != 1))
+nrow(filter(ha_nonswitchers, death != 1 & dementia != 1 & follow_loss != 1))
 
-# those with several outcomes on same date?
-nrow(filter(ha, dementia_date == death_date)) # 5
-nrow(filter(han, dementia_date == death_date)) # 30
-nrow(filter(han, dementia_date == date_hear_aid_any)) # 3
-nrow(filter(han, death_date == date_hear_aid_any)) # 0
+#### only for per-protocol! ####
+
+
+  
 
 ### sources of hearing loss and hearing aid ascertainment
 
 
 ## hearing loss
-table(hear$hear_loss_origin)
-
+table(hear$hear_loss_origin_simple)
+round(100*prop.table(table(hear$hear_loss_origin_simple)),1)
 
 # self-report
 hear$hl_self_report <- 0
@@ -100,7 +120,7 @@ hear$hl_self_report[hear$hear_dif_both_0 %in% c(2, 99) |
                       hear$hear_dif_both_2 %in% c(2, 99) |
                       hear$hear_dif_both_3 %in% c(2, 99)] <- 1
 table(hear$hl_self_report)
-
+round(100*prop.table(table(hear$hl_self_report)),1)
 
 # SRT
 hear$hl_srt <- 0
@@ -109,6 +129,7 @@ hear$hl_srt[(!is.na(hear$srt_min_0) & hear$srt_min_0 >= -5.5) |
               (!is.na(hear$srt_min_2) & hear$srt_min_2 >= -5.5) |
               (!is.na(hear$srt_min_3) & hear$srt_min_3 >= -5.5)] <- 1
 table(hear$hl_srt)
+round(100*prop.table(table(hear$hl_srt)),1)
 
 
 # EHR
@@ -117,6 +138,7 @@ hear$hl_ehr[(!is.na(hear$hear_loss_a) & hear$hear_loss_a == 1) |
               (!is.na(hear$hear_loss_b) & hear$hear_loss_b == 1) |
               (!is.na(hear$hear_loss) & hear$hear_loss == 1)] <- 1
 table(hear$hl_ehr)
+round(100*prop.table(table(hear$hl_ehr)),1)
 
 
 
@@ -140,8 +162,9 @@ nrow(filter(hear, hl_self_report == 1 & hl_ehr == 1 & hl_srt == 1))
 ## hearing aid use
 
 # leave out the ones that received HA after the grace period
-hear_ha <- filter(hear, grace_period == 1)
+hear_ha <- filter(hear, grace_period == 1 & hear_aid_any == 1)
 table(hear_ha$hear_aid_origin)
+round(100*prop.table(table(hear_ha$hear_aid_origin)),1)
 
 # self-report
 hear_ha$ha_self_report <- 0
@@ -150,11 +173,14 @@ hear_ha$ha_self_report[hear_ha$hear_aid_0 == 1 |
                          hear_ha$hear_aid_2 == 1 |
                          hear_ha$hear_aid_3 == 1] <- 1
 table(hear_ha$ha_self_report)
+round(100*prop.table(table(hear_ha$ha_self_report)),1)
 
 # inpatient and GP
 hear_ha$ha_ehr <- 0
 hear_ha$ha_ehr[hear_ha$hear_aid == 1] <- 1
 table(hear_ha$ha_ehr)
+round(100*prop.table(table(hear_ha$ha_ehr)),1)
+
 
 # combinations
 nrow(filter(hear_ha, ha_self_report == 1 & ha_ehr == 0))
@@ -181,6 +207,24 @@ table(filter(hear, hear_aid_any == 1)$education_USE); prop.table(table(filter(he
 table(filter(hear, hear_aid_any == 0)$education_USE); prop.table(table(filter(hear, hear_aid_any == 0)$education_USE))*100
 table(filter(hear, dementia == 1)$education_USE); prop.table(table(filter(hear, dementia == 1)$education_USE))*100
 table(filter(hear, dementia == 0)$education_USE); prop.table(table(filter(hear, dementia == 0)$education_USE))*100
+
+table(hear$tinnitus_sr_USE); prop.table(table(hear$tinnitus_sr_USE))*100
+table(filter(hear, hear_aid_any == 1)$tinnitus_sr_USE); prop.table(table(filter(hear, hear_aid_any == 1)$tinnitus_sr_USE))*100
+table(filter(hear, hear_aid_any == 0)$tinnitus_sr_USE); prop.table(table(filter(hear, hear_aid_any == 0)$tinnitus_sr_USE))*100
+table(filter(hear, dementia == 1)$tinnitus_sr_USE); prop.table(table(filter(hear, dementia == 1)$tinnitus_sr_USE))*100
+table(filter(hear, dementia == 0)$tinnitus_sr_USE); prop.table(table(filter(hear, dementia == 0)$tinnitus_sr_USE))*100
+
+table(hear$head_inj); prop.table(table(hear$head_inj))*100
+table(filter(hear, hear_aid_any == 1)$head_inj); prop.table(table(filter(hear, hear_aid_any == 1)$head_inj))*100
+table(filter(hear, hear_aid_any == 0)$head_inj); prop.table(table(filter(hear, hear_aid_any == 0)$head_inj))*100
+table(filter(hear, dementia == 1)$head_inj); prop.table(table(filter(hear, dementia == 1)$head_inj))*100
+table(filter(hear, dementia == 0)$head_inj); prop.table(table(filter(hear, dementia == 0)$head_inj))*100
+
+table(hear$ethnicity_simple); prop.table(table(hear$ethnicity_simple))*100
+table(filter(hear, hear_aid_any == 1)$ethnicity_simple); prop.table(table(filter(hear, hear_aid_any == 1)$ethnicity_simple))*100
+table(filter(hear, hear_aid_any == 0)$ethnicity_simple); prop.table(table(filter(hear, hear_aid_any == 0)$ethnicity_simple))*100
+table(filter(hear, dementia == 1)$ethnicity_simple); prop.table(table(filter(hear, dementia == 1)$ethnicity_simple))*100
+table(filter(hear, dementia == 0)$ethnicity_simple); prop.table(table(filter(hear, dementia == 0)$ethnicity_simple))*100
 
 median(hear$deprivation); IQR(hear$deprivation); hist(hear$deprivation)
 median(filter(hear, hear_aid_any == 1)$deprivation); IQR(filter(hear, hear_aid_any == 1)$deprivation); hist(filter(hear, hear_aid_any == 1)$deprivation)
@@ -236,14 +280,8 @@ table(filter(hear, hear_aid_any == 0)$inpatient_contact_cat); prop.table(table(f
 table(filter(hear, dementia == 1)$inpatient_contact_cat); prop.table(table(filter(hear, dementia == 1)$inpatient_contact_cat))*100
 table(filter(hear, dementia == 0)$inpatient_contact_cat); prop.table(table(filter(hear, dementia == 0)$inpatient_contact_cat))*100
 
-median(hear$presc_contact, na.rm = TRUE); IQR(hear$presc_contact, na.rm = TRUE); hist(hear$presc_contact)
-median(filter(hear, hear_aid_any == 1)$presc_contact, na.rm = TRUE); IQR(filter(hear, hear_aid_any == 1)$presc_contact, na.rm = TRUE); hist(filter(hear, hear_aid_any == 1)$presc_contact)
-median(filter(hear, hear_aid_any == 0)$presc_contact, na.rm = TRUE); IQR(filter(hear, hear_aid_any == 0)$presc_contact, na.rm = TRUE); hist(filter(hear, hear_aid_any == 0)$presc_contact)
-median(filter(hear, dementia == 1)$presc_contact, na.rm = TRUE); IQR(filter(hear, dementia == 1)$presc_contact, na.rm = TRUE); hist(filter(hear, dementia == 1)$presc_contact)
-median(filter(hear, dementia == 0)$presc_contact, na.rm = TRUE); IQR(filter(hear, dementia == 0)$presc_contact, na.rm = TRUE); hist(filter(hear, dementia == 0)$presc_contact)
-
-median(hear$diag_contact, na.rm = TRUE); IQR(hear$diag_contact, na.rm = TRUE); hist(hear$diag_contact)
-median(filter(hear, hear_aid_any == 1)$diag_contact, na.rm = TRUE); IQR(filter(hear, hear_aid_any == 1)$diag_contact, na.rm = TRUE); hist(filter(hear, hear_aid_any == 1)$diag_contact)
-median(filter(hear, hear_aid_any == 0)$diag_contact, na.rm = TRUE); IQR(filter(hear, hear_aid_any == 0)$diag_contact, na.rm = TRUE); hist(filter(hear, hear_aid_any == 0)$diag_contact)
-median(filter(hear, dementia == 1)$diag_contact, na.rm = TRUE); IQR(filter(hear, dementia == 1)$diag_contact, na.rm = TRUE); hist(filter(hear, dementia == 1)$diag_contact)
-median(filter(hear, dementia == 0)$diag_contact, na.rm = TRUE); IQR(filter(hear, dementia == 0)$diag_contact, na.rm = TRUE); hist(filter(hear, dementia == 0)$diag_contact)
+table(hear$gp_contact_cat); prop.table(table(hear$gp_contact_cat))*100
+table(filter(hear, hear_aid_any == 1)$gp_contact_cat); prop.table(table(filter(hear, hear_aid_any == 1)$gp_contact_cat))*100
+table(filter(hear, hear_aid_any == 0)$gp_contact_cat); prop.table(table(filter(hear, hear_aid_any == 0)$gp_contact_cat))*100
+table(filter(hear, dementia == 1)$gp_contact_cat); prop.table(table(filter(hear, dementia == 1)$gp_contact_cat))*100
+table(filter(hear, dementia == 0)$gp_contact_cat); prop.table(table(filter(hear, dementia == 0)$gp_contact_cat))*100
