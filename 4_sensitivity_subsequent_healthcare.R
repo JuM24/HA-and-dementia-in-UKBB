@@ -147,11 +147,13 @@ hear <- hear %>%
 
 
 
-### add healthcare contact controls ###
+### add healthcare contact control ###
 
 
 time_zero <- hear %>%
   select(id, date_hear_loss_any, censor_date)
+
+
 
 ## inpatient diagnoses
 inpatient <- readRDS('inpatient_diagnoses.rds')
@@ -159,10 +161,10 @@ colnames(inpatient)[colnames(inpatient) == 'diagnosis'] <- 'code'
 inpatient$date <- as.Date(inpatient$date, format = '%Y-%m-%d')
 inpatient <- merge(inpatient, time_zero, by = 'id')
 
-# number of secondary hospital contacts in the last five years
+# number of secondary hospital contacts after time 0
 inpatient_contact <- inpatient %>%
-  filter(date < date_hear_loss_any & 
-           date > (date_hear_loss_any - 5*365.25)) %>% # keep only those with contact dates before HL
+  filter(date > date_hear_loss_any & 
+           date < censor_date) %>% # keep only those with contact dates after HL
   distinct(id, date, .keep_all = TRUE) %>% # count multiple contacts on same day as one contact
   group_by(id) %>%
   mutate(inpatient_contact = n()) %>% # count per participant
@@ -173,6 +175,8 @@ inpatient_contact <- inpatient %>%
 # we assume that there are no true NAs in hospital data and that NAs are actually 0s
 inpatient_contact <- merge(inpatient_contact, time_zero, by = 'id', all = TRUE)
 inpatient_contact$inpatient_contact[is.na(inpatient_contact$inpatient_contact)] <- 0
+
+
 
 
 ## primary care
@@ -202,96 +206,51 @@ gp_all <- merge(gp_all, (hear %>% select(id, data_provider_last_gp)),
                 by = 'id',
                 all.x = TRUE)
 
+
+
+
 # import registration periods
 data_period <- read.csv('data_period.csv', row.names = 1) %>%
   rename(id = eid)
 data_period$from <- as.Date(data_period$from, format = '%Y-%m-%d')
 data_period$to <- as.Date(data_period$to, format = '%Y-%m-%d')
 
-# calculate date 5 years before HL to get period of interest
-gp_all$gp_start_date <- gp_all$date_hear_loss_any - 5*365.25
-
-# merge period of interest back into registration period data
+# merge period of interest into registration period data
 dates_per_person <- distinct(gp_all, id, .keep_all = TRUE)
 data_period <- merge(data_period,
-                     select(dates_per_person, id, gp_start_date, date_hear_loss_any),
+                     select(dates_per_person, id, date_hear_loss_any),
                      by = 'id')
-
-# define different extents of overlap between periods of registration and period of interest
-data_period$outside_period <- 1
-# set people whose periods of registration do not overlap at all with period
-# of interest to 0
-data_period$outside_period[(data_period$from > data_period$date_hear_loss_any) |
-                             (data_period$to < data_period$gp_start_date)] <- 0
-# those that are fully within period of registration are unproblematic
-data_period$outside_period[(data_period$from <= data_period$gp_start_date) &
-                             (data_period$to >= data_period$date_hear_loss_any)] <- 2
-# calculate the duration of overlap
-# some don't have registration data during our period of interest
-data_period$gp_data_duration[data_period$outside_period == 0] <- NA
-# others have complete data
-data_period$gp_data_duration[data_period$outside_period == 2] <- 5
-# for those whose periods of interest partially overlap with the period of 
-# registration, we have to figure out how much it reduces the required 5 years
-# period of registration starts before but ends within the period of interest
-data_period$gp_data_duration[data_period$outside_period == 1 &
-                               (data_period$gp_start_date >= data_period$from) &
-                               (data_period$date_hear_loss_any >= data_period$to)] <- 
-  as.numeric(difftime(data_period$to[data_period$outside_period == 1 &
-                            (data_period$gp_start_date >= data_period$from) &
-                            (data_period$date_hear_loss_any >= data_period$to)],
-           data_period$gp_start_date[data_period$outside_period == 1 &
-                                       (data_period$gp_start_date >= data_period$from) &
-                                       (data_period$date_hear_loss_any >= data_period$to)],
-           units = 'days'))/365.25
-# period of registration starts within and ends within the period of interest
-data_period$gp_data_duration[data_period$outside_period == 1 &
-                               (data_period$gp_start_date <= data_period$from) &
-                               (data_period$date_hear_loss_any >= data_period$to)] <- 
-  as.numeric(difftime(data_period$to[data_period$outside_period == 1 &
-                                       (data_period$gp_start_date <= data_period$from) &
-                                       (data_period$date_hear_loss_any >= data_period$to)],
-                      data_period$from[data_period$outside_period == 1 &
-                                         (data_period$gp_start_date <= data_period$from) &
-                                         (data_period$date_hear_loss_any >= data_period$to)],
-                      units = 'days'))/365.25
-# period of registration starts within and ends after the period of interest
-data_period$gp_data_duration[data_period$outside_period == 1 &
-                               (data_period$gp_start_date <= data_period$from) &
-                               (data_period$date_hear_loss_any <= data_period$to)] <- 
-as.numeric(difftime(data_period$date_hear_loss_any[data_period$outside_period == 1 &
-                                          (data_period$gp_start_date <= data_period$from) &
-                                          (data_period$date_hear_loss_any <= data_period$to)],
-         data_period$from[data_period$outside_period == 1 &
-                            (data_period$gp_start_date <= data_period$from) &
-                            (data_period$date_hear_loss_any <= data_period$to)],
-         units = 'days'))/365.25
-
-
-# sum partially overlapping periods
-data_period_partial <- data_period %>%
-  filter(outside_period == 1) %>%
+# set periods of registration to NA for those participants, for whom
+# all periods of registration occur before HL or occur after, but their
+# sum is less than 1 year
+data_period$to_hear_dif <- as.numeric(difftime(data_period$to, data_period$date_hear_loss_any),
+                                      units = 'days')/365.25
+data_period$from_hear_dif <- as.numeric(difftime(data_period$from, data_period$date_hear_loss_any),
+                                        units = 'days')/365.25
+data_period$to_from_dif <- as.numeric(difftime(data_period$to, data_period$from),
+                                      units = 'days')/365.25
+# periods that at least partially occurr after HL are summed
+data_period_positive <- data_period %>%
+  filter(to_hear_dif > 0) %>%
+  mutate(gp_time_after_HL = ifelse(from_hear_dif <= 0, to_hear_dif, (to_hear_dif - from_hear_dif))) %>%
   group_by(id) %>%
-  mutate(gp_data_duration = sum(gp_data_duration)) %>%
+  mutate(gp_time_after_HL = sum(gp_time_after_HL)) %>%
   ungroup() %>%
   distinct(id, .keep_all = TRUE) %>%
-  select(id, outside_period, gp_data_duration)
-
-# remove duplicate records of people that have data for entire period or
-# no relevant registration data at all
-data_period_complete <- data_period %>%
-  filter(outside_period != 1) %>%
-  arrange(desc(outside_period)) %>%
+  select(id, gp_time_after_HL)
+  
+# we don't have to calculate anything for registration periods before HL
+data_period_negative <- data_period %>%
+  filter(to_hear_dif < 0) %>%
   distinct(id, .keep_all = TRUE) %>%
-  select(id, outside_period, gp_data_duration)
+  select(id)
+data_period_negative$gp_time_after_HL <- NA
 
-# combine the periods for all participants and - in case of duplicates per id -
-# keep just the relevant registration period per id
-data_period <- rbind(data_period_partial, data_period_complete) %>%
-  arrange(desc(outside_period)) %>%
-  distinct(id, .keep_all = TRUE) %>%
-  select(id, gp_data_duration)
-
+# keep distinct IDs, prioritising relevant registration periods
+data_period <- rbind(data_period_positive, data_period_negative) %>%
+  distinct(id, .keep_all = TRUE)
+data_period$gp_time_after_HL[data_period$gp_time_after_HL == 0] <- NA
+  
 # set GP data censoring date
 gp_all$censor_date_gp <- zoo::as.Date('01/01/1900', format = '%d/%m/%Y')
 gp_all$censor_date_gp[gp_all$data_provider_last_gp == '1'] <-
@@ -309,11 +268,12 @@ gp_all <- gp_all %>%
                                   pmin, na.rm = TRUE))
 
 
+
 # for events and prescriptions, remove duplicate entries for each date per ID
 gp_contact <- gp_all %>%
-  # keep only events before HL, but no more than 5 years before,
-  filter(event_dt < date_hear_loss_any & 
-           event_dt > gp_start_date) %>%
+  # keep only events after HL
+  filter(event_dt > date_hear_loss_any & 
+           event_dt < censor_date_any) %>%
   distinct(id, event_dt, .keep_all = TRUE) %>%
   group_by(id) %>%
   mutate(gp_contact = n()) %>%
@@ -321,18 +281,17 @@ gp_contact <- gp_all %>%
   distinct(id, .keep_all = TRUE) %>%
   select(id, gp_contact, censor_date_gp, censor_date_any)
 
-
-# keep just participants with registrationd data within the relevant period
-# and with a duration of ascertainment within that period of at least 1 year
-gp_contact <- merge(gp_contact, data_period, by = 'id', all.y = TRUE) %>%
-  filter(!is.na(gp_data_duration) & gp_data_duration > 1)
-
-# those with full GP data but no contact, have not visited the GP
-gp_contact$gp_contact[is.na(gp_contact$gp_contact)] <- 0
+# set those with gp data but NAs in gp_contact to 0; 
+# the ones we labelled as such above are true NAs
+gp_contact <- merge(gp_contact, data_period, by = 'id', all = TRUE)
+gp_contact$gp_contact[is.na(gp_contact$gp_contact) &
+                        !is.na(gp_contact$gp_time_after_HL)] <- 0
 
 # merge both sources and create new variable for any healthcare contact
 inpatient_contact <- inpatient_contact %>%
   select(-c(date_hear_loss_any, censor_date))
+gp_contact <- gp_contact %>%
+  select(c(id, gp_contact, censor_date_gp, censor_date_any, gp_time_after_HL))
 health_contact <- merge(inpatient_contact, gp_contact, by = 'id', all = TRUE)
 hear <- merge(hear, health_contact, by = 'id', all.x = TRUE)
 
@@ -355,22 +314,26 @@ hear <- hear %>%
   mutate(censor_date_any = reduce(across(starts_with('censor_date')), 
                                   pmin, na.rm = TRUE))
 
+# calculate follow-up
+hear$follow_up <- as.numeric(difftime(hear$censor_date, 
+                                      hear$date_hear_loss_any, units = 'days'))/365.25
 
 # categorise
-# inpatient data
-hear$inpatient_contact_avg <- hear$inpatient_contact/5
+hear$inpatient_contact_avg <- hear$inpatient_contact/hear$follow_up
+
+## participants with less than one year of follow-up get NA
+hear$inpatient_contact_avg[hear$follow_up < 1] <- NA
 
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact_avg == 0] <- '1'    # 0
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0 &
-                                       hear$inpatient_contact_avg <= 0.2] <- '2'# 0-0.2
+                             hear$inpatient_contact_avg <= 0.2] <- '2'# 0-0.2
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0.2 &
-                                       hear$inpatient_contact_avg <= 0.5] <- '3'# 0.2-0.5
+                             hear$inpatient_contact_avg <= 0.5] <- '3'# 0.2-0.5
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0.5] <- '4'   # >0.5
 hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
 
-# GP data
-hear$gp_contact_avg <- hear$gp_contact/hear$gp_data_duration
+hear$gp_contact_avg <- hear$gp_contact/hear$gp_time_after_HL
 hear$gp_contact_cat <- NA
 hear$gp_contact_cat[hear$gp_contact_avg >= 0 & 
                       hear$gp_contact_avg <= 12] <- '1' # <9x/year
@@ -389,123 +352,6 @@ hear$ethnicity_simple <- as.factor(hear$ethnicity_simple)
 
 
 
-
-
-
-
-
-# INTENTION-TO-TREAT: assume no treatment switching; this is what we have for now in `hear`: 
-# we defined HA use within the grace period, but did not look at treatment adherence beyond the baseline
-
-
-
-# PER-PROTOCOL: account for switching between treatments.
-hear_PP <- data.frame(hear)
-
-# Switching from non-HA to HA:
-# for the participants beyond the grace period that got HA before the censoring date, set censoring at date of HA
-hear_PP$censor_date[hear_PP$grace_period == 0 & 
-                      hear_PP$date_hear_aid_any < hear_PP$censor_date] <- 
-  hear_PP$date_hear_aid_any[hear_PP$grace_period == 0 & 
-                              hear_PP$date_hear_aid_any < hear_PP$censor_date]
-# for those same participants, if dementia or death if occur after the (new) censoring date set them, respectively, to 0
-hear_PP$dementia[hear_PP$grace_period == 0 & hear_PP$dementia == 1 & 
-                   hear_PP$dementia_date > hear_PP$censor_date] <- 0
-hear_PP$death[hear_PP$grace_period == 0 & hear_PP$death == 1 & 
-                hear_PP$death_date > hear_PP$censor_date] <- 0
-
-# Switching from HA to non-HA (i.e., HA cessation)
-# this will not identify everybody  that switched since only some participants participated in assessments 1, 2, and 3, or have
-# EHR data available about HA cessation, but it's better than nothing
-hear_PP$ha_cease <- NA
-hear_PP$ha_cease[hear_PP$hear_aid_any == 1] <- 0
-
-# HA termination according to the EHR
-hear_PP$ha_cease_date_EHR <- NA
-hear_PP$ha_cease[hear_PP$hear_aid_any == 1 & hear_PP$date_hear_aid_any < 
-                   hear_PP$ha_cessation_date] <- 1
-hear_PP$ha_cease_date_EHR[hear_PP$hear_aid_any == 1 & hear_PP$date_hear_aid_any < 
-                            hear_PP$ha_cessation_date &
-                            !is.na(hear_PP$ha_cessation_date)] <- 
-  hear_PP$ha_cessation_date[hear_PP$hear_aid_any == 1 & hear_PP$date_hear_aid_any < 
-                              hear_PP$ha_cessation_date &
-                              !is.na(hear_PP$ha_cessation_date)]
-if (!is.null(hear_PP$ha_cessation_date)){
-  hear_PP$ha_cessation_date <- zoo::as.Date(hear_PP$ha_cessation_date)
-}
-# HA start before assessment 0 but no HA at assessment 0
-hear_PP$ha_cease_date_0 <- NA
-subset_conditions <- hear_PP$hear_aid_any == 1 & hear_PP$hear_aid_0 == 0 & 
-  !is.na(hear_PP$date_0) & hear_PP$date_hear_aid_any < hear_PP$date_0
-valid_indices <- which(!is.na(subset_conditions) & subset_conditions) # explicitly exclude NA indices
-hear_PP$ha_cease[valid_indices] <- 1
-hear_PP$ha_cease_date_0[valid_indices] <- hear_PP$date_0[valid_indices]
-if (!is.null(hear_PP$ha_cease_date_0)){
-  hear_PP$ha_cease_date_0 <- zoo::as.Date(hear_PP$ha_cease_date_0)
-}
-# HA start before assessment 1 but no HA at assessment 1
-hear_PP$ha_cease_date_1 <- NA
-subset_conditions <- hear_PP$hear_aid_any == 1 & hear_PP$hear_aid_1 == 0 & 
-  !is.na(hear_PP$date_1) & hear_PP$date_hear_aid_any < hear_PP$date_1
-valid_indices <- which(!is.na(subset_conditions) & subset_conditions)
-hear_PP$ha_cease[valid_indices] <- 1
-hear_PP$ha_cease_date_1[valid_indices] <- hear_PP$date_1[valid_indices]
-hear_PP$ha_cease_date_1 <- zoo::as.Date(hear_PP$ha_cease_date_1)
-if (!is.null(hear_PP$ha_cease_date_1)){
-  hear_PP$ha_cease_date_1 <- zoo::as.Date(hear_PP$ha_cease_date_1)
-}
-# HA start before assessment 2 but no HA at assessment 2
-hear_PP$ha_cease_date_2 <- NA
-subset_conditions <- hear_PP$hear_aid_any == 1 & hear_PP$hear_aid_2 == 0 & 
-  !is.na(hear_PP$date_2) & hear_PP$date_hear_aid_any < hear_PP$date_2
-valid_indices <- which(!is.na(subset_conditions) & subset_conditions)
-hear_PP$ha_cease[valid_indices] <- 1
-hear_PP$ha_cease_date_2[valid_indices] <- hear_PP$date_2[valid_indices]
-hear_PP$ha_cease_date_2 <- zoo::as.Date(hear_PP$ha_cease_date_2)
-if (!is.null(hear_PP$ha_cease_date_2)){
-  hear_PP$ha_cease_date_2 <- zoo::as.Date(hear_PP$ha_cease_date_2)
-}
-# HA start before assessment 3 but no HA at assessment 3
-hear_PP$ha_cease_date_3 <- NA
-subset_conditions <- hear_PP$hear_aid_any == 1 & hear_PP$hear_aid_3 == 0 & 
-  !is.na(hear_PP$date_3) & hear_PP$date_hear_aid_any < hear_PP$date_3
-valid_indices <- which(!is.na(subset_conditions) & subset_conditions)
-hear_PP$ha_cease[valid_indices] <- 1
-hear_PP$ha_cease_date_3[valid_indices] <- hear_PP$date_3[valid_indices]
-hear_PP$ha_cease_date_3 <- zoo::as.Date(hear_PP$ha_cease_date_3)
-if (!is.null(hear_PP$ha_cease_date_3)){
-  hear_PP$ha_cease_date_3 <- zoo::as.Date(hear_PP$ha_cease_date_3)
-}
-# find the earliest date of HA cessation
-hear_PP <- transform(hear_PP, ha_cease_date = pmin(ha_cease_date_EHR, 
-                                                   ha_cease_date_0, 
-                                                   ha_cease_date_1,
-                                                   ha_cease_date_2, 
-                                                   ha_cease_date_3, na.rm = TRUE))
-hear_PP$ha_cease_date <- zoo::as.Date(hear_PP$ha_cease_date)
-
-# if censoring occurs after the switch, set censoring to the switch date
-hear_PP$censor_date[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                      hear_PP$ha_cease_date < hear_PP$censor_date] <- 
-  hear_PP$ha_cease_date[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                          hear_PP$ha_cease_date < hear_PP$censor_date]
-# if dementia or death or loss to follow-up occur after the (new) censoring date, 
-# set them, respectively, to 0
-hear_PP$dementia[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                   hear_PP$dementia == 1 & hear_PP$dementia_date > hear_PP$censor_date] <- 0
-hear_PP$death[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                hear_PP$death == 1 & hear_PP$death_date > hear_PP$censor_date] <- 0
-hear_PP$follow_loss[!is.na(hear_PP$ha_cease) & hear_PP$ha_cease == 1 & 
-                      hear_PP$follow_loss == 1 & hear_PP$follow_loss_date > hear_PP$censor_date] <- 0
-
-# calculate follow-up
-hear$follow_up <- as.numeric(difftime(hear$censor_date, 
-                                      hear$date_hear_loss_any, units = 'days'))/365.25
-hear_PP$follow_up <- as.numeric(difftime(hear_PP$censor_date, 
-                                         hear_PP$date_hear_loss_any, units = 'days'))/365.25
-
 # export
-saveRDS(hear, file = 'hearing_masterfile_ITT.rds')
-saveRDS(hear_PP, file = 'hearing_masterfile_PP.rds')
-
+saveRDS(hear, file = 'hearing_masterfile_subsequent_healthcare_ITT.rds')
 rm(list = ls()); gc()
