@@ -21,6 +21,8 @@
   # - addition of covariate `inpatient_contact_cat` to matching and effect estimation
 
 ## analysis 7:
+hear$dementia_all <- hear$dementia
+hear$dementia_all[hear$dementia_gp == 1] <- 1
   # - addition of covariates `inpatient_contact_cat`, `presc_contact`, `diag_contact` 
   #   to matching and effect estimation
 
@@ -48,41 +50,48 @@
 
 library(tidyverse)
 library(MatchIt)
+library(WeightIt)
 library(survey)
 
 source('0_helper_functions.R')
 
 # set file name
-file_name <- 'hearing_masterfile_subsequent_healthcare_ITT.rds'
+file_name <- 'hearing_masterfile_ITT.rds'
 
 hear <- readRDS(file_name)
 
 set.seed(6)
 m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
-                 srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
+                 srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
                  data = hear,
                  method = 'quick', distance = 'bart', estimand = 'ATE',
                  distance.options = list(seed = 6))
-           
+
+#m.out <- matchit(formula = hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+#                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+#                 data = hear,
+#                 method = 'quick', distance = 'nnet', estimand = 'ATE',
+#                 distance.options = list(size = 250, maxit = 200, MaxNWts = 8000, seed = 6))
+
 table(hear$hear_aid_any)
 table(hear$dementia)
 
 
 # extract matched data and check a few basic matching stats
 md <- match.data(m.out)
-model_summary <- summary(m.out, interactions = TRUE, un = TRUE)
-plot(model_summary)
+#model_summary <- summary(m.out, interactions = TRUE, un = TRUE)
+cobalt::love.plot(m.out, stars = 'raw')
 
 
 # further scrutinise matching by looking at density plots
 plot(m.out, type = 'density', interactive = FALSE,
-     which.xs = ~ hear_aid_any ~ age_USE + sex + education_USE + deprivation + 
-       g_USE + srt_min_USE + data_provider_freq)
+     which.xs = ~ hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+       srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple)
 
 # approach to calculate CIs using `syvglm()`
 dsn = svydesign(ids =~subclass, weights=~weights, data=md)
-fit = svyglm(dementia ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
-               g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
+fit = svyglm(dementia ~ hear_aid_any * (age_USE + education_USE + sex + deprivation + 
+               g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
               design = dsn, family = quasibinomial())
 marginaleffects::comparisons(fit,
                                  variables = c('hear_aid_any'),
@@ -109,10 +118,8 @@ ggplot(df_surv, aes(x = time, y = estimate, color = strata, linetype = strata)) 
         axis.title.y = element_text(face = "bold", size = 12.5, color = "grey15"), legend.position = 'none')
 
 # HRs
-fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any + age_USE + education_USE + sex + 
-                            deprivation + g_USE + srt_min_USE + data_provider_freq +
-                            + tinnitus_sr_USE + ethnicity, robust = TRUE,
-                          data = md, weights = weights)
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
 summary(fit_hr)$coefficients['hear_aid_any', 2] # point estimate
 broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
 
@@ -124,75 +131,28 @@ broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
 
 
 ## Effect of emulated randomisation to HA on subsequent healthcare contact
-## - re-run `4_clean_data.R`, but change the following:
+# read in correct file
+hear_inpatient <- readRDS('hearing_masterfile_subsequent_healthcare_ITT.rds')
 
-# 1. run `filter(date > date_hear_loss_any & date < censor_date_any)`
-# instead of `filter(date < date_hear_loss_any &
-#               date > date_hear_loss_any-5*365.25)`
-
-# 2. run `filter(event_dt > date_hear_loss_any & event_dt < cansor_date)`
-# instead of `filter(event_dt < date_hear_loss_any & event_dt > date_hear_loss_any-5*365.25)`
-
-# 3. do not run `gp_contact$gp_contact[gp_contact$change_to_na == 1] <- NA`
-
-## keep only participants with at least one year of follow-up
-hear_inpatient <- hear %>%
-  filter(difftime(censor_date, date_hear_loss_any) >= 365.25)
-hear_gp <- hear %>%
-  filter(!is.na(gp_contact) & (censor_date_any - date_hear_loss_any) >= 365.25)
-
-# average number of inpatient visits per year of follow-up
-hear_inpatient$inpatient_contact_avg <- 
-  hear_inpatient$inpatient_contact/hear_inpatient$follow_up
-
-hear_gp$follow_up_any <- as.numeric(difftime(hear_gp$censor_date_any, 
-                                             hear_gp$date_hear_loss_any, 
-                                             units = 'days'))/365.25
-hear_gp$gp_contact_avg <-
-  hear_gp$gp_contact/hear_gp$follow_up_any
-
-# categorisation of inpatient visits
-hear_inpatient$inpatient_contact_cat <- NA
-hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg == 0] <- '0'
-hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0 & 
-                             hear_inpatient$inpatient_contact_avg <= 0.25] <- '1'
-hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0.25 & 
-                           hear_inpatient$inpatient_contact_avg <= 0.5] <- '2'
-hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 0.5 & 
-                           hear_inpatient$inpatient_contact_avg <= 1] <- '3'
-hear_inpatient$inpatient_contact_cat[hear_inpatient$inpatient_contact_avg > 1] <- '4'
-
-
-hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
-
-hear_gp$gp_contact_cat <- NA
-hear_gp$gp_contact_cat[hear_gp$gp_contact_avg >= 0 & 
-                           hear_gp$gp_contact_avg <= 3] <- '0'
-hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 3 & 
-                           hear_gp$gp_contact_avg <= 12] <- '1'
-hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 12 & 
-                           hear_gp$gp_contact_avg <= 24] <- '3'
-hear_gp$gp_contact_cat[hear_gp$gp_contact_avg > 24] <- '4'
-hear_gp$gp_contact_cat <- as.factor(hear_gp$gp_contact_cat)
-hear_gp$gp_contact_cat_binary <- 0
-hear_gp$gp_contact_cat_binary[hear_gp$gp_contact_cat != '0'] <- 1
-table(hear_gp$gp_contact_cat)
-
+hear_gp <- hear_inpatient %>%
+  filter(!is.na(gp_contact_cat))
 
 # comparisons of each group with zero group for inpatient contact
-m.inpatient <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
-                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
+set.seed(6)
+m.inpatient <- matchit(formula = hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
                        data = hear_inpatient,
-                       method = 'quick', distance = 'bart', estimand = 'ATE',
-                       distance.options = list(seed = 6))
+                       method = 'quick', distance = 'nnet', estimand = 'ATE',
+                       distance.options = list(size = 250, maxit = 200, MaxNWts = 8000, seed = 6))
 md_inpatient <- match.data(m.inpatient)
 
-for (group in as.character(seq(1, 4))){
-  subset <- filter(md_inpatient, inpatient_contact_cat %in% c('0', group))
+dsn = svydesign(ids =~subclass, weights=~weights, data=md_inpatient)
+for (group in as.character(seq(2, 4))){
+  subset <- filter(md_inpatient, inpatient_contact_cat %in% c('1', group))
   subset$inpatient_contact_cat <- as.factor(as.character(subset$inpatient_contact_cat))
   dsn = svydesign(ids =~subclass, weights=~weights, data=subset)
-  fit = svyglm(inpatient_contact_cat ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
-                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
+  fit = svyglm(inpatient_contact_cat ~ hear_aid_any * (age_USE + education_USE + sex + deprivation + 
+                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
                design = dsn, family = quasibinomial())
   subset_comparison <- marginaleffects::comparisons(fit,
                                                     variables = c('hear_aid_any'),
@@ -205,18 +165,18 @@ for (group in as.character(seq(1, 4))){
 
 # comparisons of each group with zero group for GP contact
 m.gp <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
-                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity, 
-                       data = hear_inpatient,
+                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+                       data = hear_gp,
                        method = 'quick', distance = 'bart', estimand = 'ATE',
                        distance.options = list(seed = 6))
 md_gp <- match.data(m.gp)
 
-for (group in as.character(seq(1, 4))){
-  subset <- filter(md_gp, gp_contact_cat %in% c('0', group))
+for (group in as.character(seq(2, 3))){
+  subset <- filter(md_gp, gp_contact_cat %in% c('1', group))
   subset$gp_contact_cat <- as.factor(as.character(subset$gp_contact_cat))
   dsn = svydesign(ids =~subclass, weights=~weights, data=subset)
   fit = svyglm(gp_contact_cat ~ hear_aid_any + age_USE + education_USE + sex + deprivation + 
-                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity,
+                 g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple,
                design = dsn, family = quasibinomial())
   subset_comparison <- marginaleffects::comparisons(fit,
                                                     variables = c('hear_aid_any'),
@@ -228,23 +188,67 @@ for (group in as.character(seq(1, 4))){
 
 
 
-## TODO: Effect of pre-randomisation healthcare contact on dementia
+
+
+
+
+### Effect of pre-randomisation healthcare contact on dementia
+
+hear <- readRDS(file_name)
+
+## inpatient hospital
+# estimate the weights
+w_inpatient <- weightit(inpatient_contact_cat ~ age_USE + sex + education_USE + 
+                          deprivation + g_USE + srt_min_USE + data_provider_freq + 
+                          tinnitus_sr_USE + ethnicity_simple, 
+                        data = hear, 
+                        method = 'glm', 
+                        estimand = 'ATE')
+# fit the model
+fit_inpatient <- glm_weightit(dementia ~ inpatient_contact_cat + age_USE + sex + education_USE + 
+                                deprivation + g_USE + srt_min_USE + data_provider_freq + 
+                                tinnitus_sr_USE + ethnicity_simple,
+                              data = hear, 
+                              weightit = w_inpatient, 
+                              family = 'binomial', 
+                              vcov = 'HC0')
+# estimate the effect
+est_inpatient <- marginaleffects::avg_comparisons(fit_inpatient,
+                                                  comparison = 'lnratioavg',
+                                                  transform = 'exp',
+                                                  variables = 'inpatient_contact_cat')
 
 ## primary care
-hear <- hear %>%
+hear_gp <- hear %>%
   # remove participants with GP censoring before time 0
-  filter(!is.na(gp_contact) & censor_date_gp >= date_hear_loss_any)
+  filter(!is.na(gp_contact_cat))
 
-# determine date one year before time zero
-hear$start_gp <- hear$date_hear_loss_any - 365
-
+w_gp <- weightit(gp_contact_cat ~ age_USE + sex + education_USE + 
+                   deprivation + g_USE + srt_min_USE + data_provider_freq + 
+                   tinnitus_sr_USE + ethnicity_simple, 
+                 data = hear_gp, 
+                 method = 'cbps', 
+                 estimand = 'ATE')
+# fit the model
+fit_gp <- glm_weightit(dementia ~ gp_contact_cat + age_USE + sex + education_USE + 
+                         deprivation + g_USE + srt_min_USE + data_provider_freq + 
+                         tinnitus_sr_USE + ethnicity_simple,
+                       data = hear_gp, 
+                       weightit = w_gp, 
+                       family = 'binomial', 
+                       vcov = 'HC0')
+# estimate the effect
+est_gp <- marginaleffects::avg_comparisons(fit_gp,
+                                       comparison = 'lnratioavg',
+                                       transform = 'exp',
+                                       variables = 'gp_contact_cat')
 
 
 
 
 
 ## Effect of confounders on dementia
-hear$prop_score <- scale(m.out$distance)[,1]
+hear$prop_score <- scale(m.out$distance)[, 1]
 fit <- glm(dementia ~ prop_score + hear_aid_any,
            data = hear, family = binomial())
 summary(fit)
@@ -254,18 +258,6 @@ se <- sqrt(cov_robust[2,2])
 critical_value <- qt(0.975, df = df.residual(fit))
 lower_bound <- exp(coef(fit)[2] - critical_value * se)
 upper_bound <- exp(coef(fit)[2] + critical_value * se)
-
-
-dsn = svydesign(ids =~subclass, weights=~1, data=md)
-fit = svyglm(dementia ~ distance + hear_aid_any,
-             design = dsn, family = quasibinomial())
-
-marginaleffects::comparisons(fit,
-                             variables = 'prop_score',
-                             wts = NULL,
-                             comparison = 'lnratioavg',
-                             transform = 'exp')
-
 
 
 
@@ -315,11 +307,11 @@ hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_an
 # assessments are "truly" missing)
 
 # get info on SiN administration
-data_all <- readRDS('main_vars.Rds') %>%
-  select(eid, starts_with(c('X4268.', 'X4275.'))) %>%
-  rename(id = eid)
+#data_all <- readRDS('main_vars.Rds') %>%
+#  select(eid, starts_with(c('X4268.', 'X4275.'))) %>%
+#  rename(id = eid)
 
-hear <- merge(hear, data_all, by = 'id', all.x = TRUE)
+#hear <- merge(hear, data_all, by = 'id', all.x = TRUE)
 
 
 # education, g, srt_min, tinnitus_sr
@@ -338,10 +330,10 @@ for (suf in suffixes){
 # the SiN is a special case, since not everybody was given the test
 # those that were given the test but refused or did not complete it,
 # will get a dummy value
-hear$srt_min_0[hear$X4268.0.0 %in% c(-1, 9) & hear$X4275.0.0 %in% c(-1, 9)] <- 999
-hear$srt_min_1[hear$X4268.1.0 %in% c(-1, 9) & hear$X4275.1.0 %in% c(-1, 9)] <- 999
-hear$srt_min_2[hear$X4268.2.0 %in% c(-1, 9) & hear$X4275.2.0 %in% c(-1, 9)] <- 999
-hear$srt_min_3[hear$X4268.3.0 %in% c(-1, 9) & hear$X4275.3.0 %in% c(-1, 9)] <- 999
+hear$srt_min_0[!is.na(hear$hear_test_0) & is.na(hear$srt_min_0)] <- 999
+hear$srt_min_1[!is.na(hear$hear_test_1) & is.na(hear$srt_min_1)] <- 999
+hear$srt_min_2[!is.na(hear$hear_test_2) & is.na(hear$srt_min_2)] <- 999
+hear$srt_min_3[!is.na(hear$hear_test_3) & is.na(hear$srt_min_3)] <- 999
 
 # determine the assessment that is closest to HL start and which will be used for covariate measurement 
 hear <- find_closest_non_missing(hear, 'education', date_hear_loss_any = 'date_hear_loss_any')
@@ -411,6 +403,11 @@ hear[hear == 999] <- NA
 hear$follow_up <- as.numeric(difftime(hear$censor_date, 
                                       hear$date_hear_loss_any, units = 'days'))/365.25
 
+# due to low numbers of non-white participants, let's set ethnicity to binary
+hear$ethnicity_simple <- as.character(hear$ethnicity)
+hear$ethnicity_simple[hear$ethnicity != '1'] <- '2'
+hear$ethnicity_simple <- as.factor(hear$ethnicity_simple)
+
 
 # some lifestyle factors used for imputation
 other_predictors <- readRDS('D://Job/Projects/Pseudo-scales/pseudoscales GitHub/test_folder_pseudoscales/output_files/covariates.Rds') %>%
@@ -421,7 +418,7 @@ hear <- merge(hear, other_predictors, by = 'id', all.x = TRUE)
 subsample <- hear %>%
   # remove those that were not given the SiN or did not participate
   select(id, age_USE, sex, education_USE, deprivation, g_USE, srt_min_USE,
-         data_provider_freq, tinnitus_sr_USE, ethnicity, data_provider_freq,
+         data_provider_freq, tinnitus_sr_USE, ethnicity_simple,
          alc_freq_0, smoking_0, phys_act_0, waist_0, hear_aid_any,
          follow_up, dementia)
 # change rownames to be able to later merge back
@@ -430,7 +427,7 @@ subsample$id <- NULL
 
 # to factors
 subsample <- subsample %>% 
-  mutate(across(c(sex, education_USE, data_provider_freq, ethnicity, 
+  mutate(across(c(sex, education_USE, data_provider_freq, ethnicity_simple, 
                   tinnitus_sr_USE, dementia), as.factor))
 subsample$dementia <- as.numeric(subsample$dementia)
 
@@ -451,8 +448,9 @@ library(MatchThem)
 covariates = c('age_USE', 'sex', 'education_USE', 
                'deprivation', 'g_USE', 'srt_min_USE', 
                'data_provider_freq', 'tinnitus_sr_USE',
-               'ethnicity') 
+               'ethnicity_simple') 
 formula <- as.formula(paste0('hear_aid_any ~ ', paste(covariates, collapse = '+')))
+set.seed(6)
 m.out <- matchthem(datasets = imp, 
                    formula = formula,
                    method = 'quick', 
@@ -467,19 +465,121 @@ cobalt::love.plot(m.out, stars = 'raw')
 
 
 ## run the analysis on each imputed dataset
-fit_glm <- with(data = m.out, svyglm(dementia ~ hear_aid_any * (age_USE + education_USE + sex + deprivation + 
-                                                                  g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity), 
-                                     family = quasibinomial()), cluster = TRUE)
-
+fit_glm <- with(data = m.out, 
+                svyglm(as.factor(dementia) ~ hear_aid_any * (age_USE + sex + education_USE + deprivation + 
+                                                               g_USE + srt_min_USE + data_provider_freq + 
+                                                               tinnitus_sr_USE + ethnicity_simple), 
+                       family = quasibinomial()), cluster = TRUE)
 marginaleffects::avg_comparisons(fit_glm,
                                  vcov = 'HC3',
                                  variables = c('hear_aid_any'),
                                  wts = '(weights)',
                                  comparison = 'lnratioavg')
-# INSERT CODE FROM LOCAL IMPUTATION
+
+fit_hr <- with(data = m.out, 
+               survival::coxph(survival::Surv(follow_up, dementia) ~ 
+                                 hear_aid_any, robust = TRUE), cluster = TRUE)
+summary(pool(fit_hr), conf.int = TRUE)
 
 
 
+
+## Forest plots
+
+# basic model and sensitivity analyses
+rrs_3 <- read.csv('rrs.csv') %>%
+  filter(fig == '3')
+
+# Categorize rows
+rrs_3 <- rrs_3 %>%
+  mutate(category = case_when(
+    row_number() %in% 1:2 ~ 'Basic',
+    row_number() %in% 3:5 ~ 'sample change',
+    row_number() %in% 6:11 ~ 'extra adjust.',
+    row_number() %in% 12:20 ~ 'neg. control',
+  ))
+
+
+# specify levels in the reverse order to keep the desired plot order
+rrs_3$model <- factor(rrs_3$model, levels = rev(rrs_3$model))
+
+# reorder category factor levels to match the legend order
+rrs_3$category <- factor(rrs_3$category, levels = c('Basic', 'sample change', 'extra adjust.', 'neg. control'))
+
+# Custom colors for categories
+category_colors <- c('Basic' = '#316879', 'sample change' = '#81b7d2', 
+                     'extra adjust.' = '#d0944d', 'neg. control' = '#f47a60')
+tiff('Figure 3.tif', units = 'in', width=4, height=5.7, res=300)
+ggplot(rrs_3, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high, color = category)) +
+  geom_pointrange(linewidth = 0.5, size = 0.5) +  
+  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1) + 
+  scale_color_manual(values = category_colors) +
+  coord_flip() + 
+  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
+  
+  theme_minimal() +
+  
+  theme(
+    axis.text.x = element_text(face = 'plain', size = 10, color = 'grey15'),
+    axis.title.x = element_blank(),
+    axis.text.y = element_text(face = 'plain', size = 10, color = 'grey15'),
+    axis.title.y = element_blank(),
+    legend.position = 'none',
+    legend.title = element_text(face = 'bold', size = 0, color = 'grey15'),
+    legend.text = element_text(size = 14, color = 'grey15')
+  ) +
+  
+  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
+dev.off()
+
+
+# effect of HA on healthcare contact
+rrs_4a <- read.csv('rrs.csv') %>%
+  filter(fig == '4a')
+rrs_4a$model <- factor(rrs_4a$model, levels = rev(rrs_4a$model))
+tiff('Figure 4a.tif', units = 'in', width=5, height=2, res=300)
+ggplot(rrs_4a, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high)) +
+  geom_pointrange(linewidth = 0.8, size = 0.7, colour = 'grey40') +  
+  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1, colour = 'grey40') + 
+  coord_flip() + 
+  scale_y_continuous(limits = c(0.96, 1.65), breaks = seq(1, 1.6, by = 0.1)) +
+  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
+  
+  theme_minimal() +
+  
+  theme(
+    axis.text.x = element_text(face = 'plain', size = 12.5, color = 'grey15'),
+    axis.title.x = element_blank(),
+    axis.text.y = element_text(face = 'plain', size = 12.5, color = 'grey15'),
+    axis.title.y = element_blank(),
+  ) +
+  
+  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
+dev.off()
+
+# effect of healthcare contact on dementia
+rrs_4b <- read.csv('rrs.csv') %>%
+  filter(fig == '4b')
+rrs_4b$model <- factor(rrs_4b$model, levels = rev(rrs_4b$model))
+tiff('Figure 4b.tif', units = 'in', width=5, height=2, res=300)
+ggplot(rrs_4b, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high)) +
+  geom_pointrange(linewidth = 0.8, size = 0.7, colour = 'grey40') +  
+  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1, colour = 'grey40') + 
+  coord_flip() + 
+  scale_y_continuous(limits = c(0.9, 4), breaks = seq(1, 4, by = 0.5)) +
+  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
+  
+  theme_minimal() +
+  
+  theme(
+    axis.text.x = element_text(face = 'plain', size = 12.5, color = 'grey15'),
+    axis.title.x = element_blank(),
+    axis.text.y = element_text(face = 'plain', size = 12.5, color = 'grey15'),
+    axis.title.y = element_blank(),
+  ) +
+  
+  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
+dev.off()
 
 
 ## Analysis of effects of potential confounding
@@ -510,34 +610,45 @@ marginaleffects::avg_comparisons(fit_glm,
 # the confounder in the exposed and effect sizes (HRs) of the confounder 
 # that would allow for a true effect within the pre-specified window.
 
-
+library(foreach)
+library(doParallel)
 library(tipr)
+core_number <- 30
 # constant values for the simulation
 estimate_low <- 0.95
 estimate_high <- 1.05
-effect_observed <- 1.55
-unexposed_confounder_prev <- 0.1
-new_effect <- data.frame(matrix(ncol = 4, nrow = 0)); colnames(new_effect) <- 
-  c('effect_observed', 'exposed_confounder_prev', 
-    'unexposed_confounder_prev', 'confounder_outcome_effect')
+effect_observed <- 1.19
 
 
 # varying values
-set.seed(24)
-for (i in seq(1, 100000)){
-  exposed_confounder_prev <- runif(n=1, min=0.1, max=1)
-  confounder_outcome_effect <- runif(n=1, min=1, max=20)
+registerDoParallel(cores = core_number)
+new_effect <- foreach(i = 1:100000, .combine = rbind, .packages = c('tipr')) %dopar%{
+  exposure_confounder_effect <- runif(n=1, min=1, max=5)
+  confounder_outcome_effect <- runif(n=1, min=1, max=5)
   
-  new_effect <- rbind(new_effect, adjust_hr_with_binary(effect_observed = effect_observed, 
-                                                        exposed_confounder_prev = exposed_confounder_prev, 
-                                                        unexposed_confounder_prev = unexposed_confounder_prev, 
-                                                        confounder_outcome_effect = confounder_outcome_effect,
-                                                        verbose = FALSE))
+  adjust_rr(effect_observed = effect_observed, 
+            exposure_confounder_effect = exposure_confounder_effect, 
+            confounder_outcome_effect = confounder_outcome_effect, 
+            verbose = FALSE)
 }
+stopImplicitCluster()
 
 # reduce to assumed range
-new_effect <- filter(new_effect, hr_adjusted > estimate_low & hr_adjusted < estimate_high)
-min(new_effect$exposed_confounder_prev); min(new_effect$confounder_outcome_effect)
+new_effect <- filter(new_effect, rr_adjusted > estimate_low & rr_adjusted < estimate_high)
 
 # plot possible prevalence in the exposed and confounders effects in the assumed range
-plot(new_effect$exposed_confounder_prev, new_effect$confounder_outcome_effect)
+plot(new_effect$exposure_confounder_effect, new_effect$confounder_outcome_effect)
+
+# calculate combined effect
+new_effect$combined_effect <- new_effect$exposure_confounder_effect + new_effect$confounder_outcome_effect
+hist(new_effect$combined_effect, 100)
+
+# quantiles for the combined effect
+min(new_effect$combined_effect)
+round(quantile(new_effect$combined_effect, 0.50), 2)
+round(quantile(new_effect$combined_effect, 0.75), 2)
+round(quantile(new_effect$combined_effect, 0.95), 2)
+
+# plot combined effect vs. distance between the two confounding effects
+new_effect$effect_distance <- abs(new_effect$exposure_confounder_effect - new_effect$confounder_outcome_effect)
+plot(new_effect$effect_distance, new_effect$combined_effect)
