@@ -57,12 +57,14 @@ dems <- dems %>%
 ethnicity <- data_all %>% 
   select(c(eid, X21000.0.0)) %>%
   rename(id = eid, ethnicity = X21000.0.0)
-ethnicity$ethnicity[ethnicity$ethnicity %in% c(1, 1001, 1002, 1003)] <- 1 # white
-ethnicity$ethnicity[ethnicity$ethnicity %in% c(4, 4001, 4002, 4003)] <- 2 # black
-ethnicity$ethnicity[ethnicity$ethnicity %in% c(3, 3001, 3002, 3003, 3004, 5)] <- 3 # Asian
-ethnicity$ethnicity[ethnicity$ethnicity %in% c(2, 2001, 2002, 2003, 2004, 6)] <- 4 # other
-ethnicity$ethnicity[ethnicity$ethnicity %in% c(-1, -3)] <- NA
-
+ethnicity$ethnicity_cat <- ethnicity$ethnicity
+ethnicity$ethnicity_cat[ethnicity$ethnicity %in% c(1, 1001, 1002, 1003)] <- 1 # white
+ethnicity$ethnicity_cat[ethnicity$ethnicity %in% c(4, 4001, 4002, 4003)] <- 2 # black
+ethnicity$ethnicity_cat[ethnicity$ethnicity %in% c(3, 3001, 3002, 3003, 3004, 5)] <- 3 # Asian
+ethnicity$ethnicity_cat[ethnicity$ethnicity %in% c(2, 2001, 2002, 2003, 2004, 6)] <- 4 # other
+ethnicity$ethnicity_cat[ethnicity$ethnicity %in% c(-1, -3)] <- NA
+ethnicity$ethnicity <- NULL
+ethnicity <- rename(ethnicity, ethnicity = ethnicity_cat)
 
 
 
@@ -469,78 +471,41 @@ gp_diagnoses[gp_diagnoses == ''] <- NA
 gp_diagnoses$diagnosis <- NA
 
 
+
+
+
 # diagnosis codes
 accident_codes <- unique(inpatient[(grep('^V', inpatient$code)), 'code'])
 
 diagnosis_codes <- data.frame(
-  disorder = c('tinnitus', 'tinnitus', 
-               rep('head_inj', 40),
-               rep('dementia_gp', 295),
-               rep('fract_any', 95),
+  disorder = c('tinnitus', 'tinnitus',
+               rep('hip_fract', 31),
+               rep('head_inj', 56),
                rep('accident', length(accident_codes))),
   code = c(c('H931', '3883'),
-           'S06', 'S060', 'S0600', 'S0601', 'S061', 'S0610', 'S062', 'S0620',
+           '820', '8200', '8202', '8208', '821', '8210', '8211', '8212', 'S72', 
+           'S720', 'S7200', 'S7201', 'S721', 'S7210', 'S7211', 'S722', 'S7220', 
+           'S7221', 'S723', 'S7230', 'S7231', 'S724', 'S7240', 'S7241', 'S727', 
+           'S7270', 'S728', 'S7280', 'S729', 'S7290', 'S7291', 
+           'S06', 'S060', 'S0600', 'S0601', 'S061', 'S0610', 
+           'S062', 'S0620',
            'S0621', 'S063', 'S0630', 'S0631', 'S064', 'S0640', 'S0641', 'S065', 
            'S0650', 'S0651', 'S066', 'S0660', 'S0661', 'S067', 'S0670', 'S068', 
-           'S0680', 'S0681', 'S069', 'S0690', 'S0691', '850', '8509', '851', 
+           'S0680', 'S0681', 'S069', 'S0690', 'S0691', 'S020', 'S0200', 'S0201',
+           'S0210', 'S0211', 'S023', 'S0230', 'S0231', '850', '8509', '851', 
            '8510', '852', '8520', '853', '8530', '854', '8540', '8541',
-           '1461',  'A411.', 'A4110', 'E00..', 'E000.', 'E001.', 'E0010', 'E0011', 
-           'E0012', 'E0013', 'E001z', 'E002.', 'E0020', 'E0021', 'E002z', 'E003.', 
-           'E004.', 'E0040', 'E0041', 'E0042', 'E0043', 'E004z', 'E012.', 'E02y1', 
-           'E041.', 'Eu00.', 'Eu000', 'Eu001', 'Eu002', 'Eu00z', 'Eu01.', 'Eu010', 
-           'Eu011', 'Eu012', 'Eu013', 'Eu01y', 'Eu01z', 'Eu02.', 'Eu020', 'Eu021', 
-           'Eu022', 'Eu023', 'Eu024', 'Eu025', 'Eu02y', 'Eu02z', 'Eu041', 'Eu106', 
-           'Eu107', 'F110.', 'F1100', 'F1101', 'F111.', 'F112.', 'F116.', 'F118.', 
-           'F11x2', 'F11x7', 'F11x9', 'F11y2', 'F21y2', 'Fyu30', '38C13', '3AE3.', 
-           '3AE4.', '3AE5.', '3AE6.', '66h..', '6AB..', '8BM02', '8BM50', '8BM60', 
-           '8BPa.', '8CMe0', '8CMG2', '8CMZ.', '8CMZ0', '8CMZ1', '8CMZ2', '8CMZ3', 
-           '8CSA.', '8Hla.', '8IAe0', '8IAe2', '9hD..', '9hD0.', '9hD1.', '9Ou..', 
-           '9Ou1.', '9Ou2.', '9Ou3.', '9Ou4.', '9Ou5.', '.1461', '1461',  '.E11.', 
-           '.E111', '.E112', '.E113', '.E114', '.E115', '.E116', '.E11Z', '.F21Z', 
-           '.F371', '.G78.', 'A411.', 'A4110', 'E00..', 'E000.', 'E001.', 'E0010', 
-           'E0011', 'E0012', 'E0013', 'E001z', 'E002.', 'E0020', 'E0021', 'E002z', 
-           'E003.', 'E004.', 'E0040', 'E0041', 'E0042', 'E0043', 'E004z', 'E012.', 
-           'E02y1', 'E041.', 'Eu00.', 'Eu000', 'Eu001', 'Eu002', 'Eu00z', 'Eu01.', 
-           'Eu010', 'Eu011', 'Eu012', 'Eu013', 'Eu01y', 'Eu01z', 'Eu02.', 'Eu020', 
-           'Eu021', 'Eu022', 'Eu023', 'Eu024', 'Eu025', 'Eu02y', 'Eu02z', 'Eu041', 
-           'F110.', 'F1100', 'F1101', 'F111.', 'F112.', 'F116.', 'F118.', 'F11x2', 
-           'F11x7', 'F11y2', 'F21y2', 'Fyu30', 'Ub1T6', 'X002m', 'X002w', 'X002x',
-           'X002y', 'X002z', 'X0030', 'X0031', 'X0032', 'X0033', 'X0034', 'X0035', 
-           'X0036', 'X0037', 'X0039', 'X003A', 'X003B', 'X003C', 'X003D', 'X003E', 
-           'X003F', 'X003G', 'X003H', 'X003I', 'X003J', 'X003l', 'X003m', 'X003P', 
-           'X003R', 'X003T', 'X003V', 'X003W', 'X003X', 'X00R2', 'X00Rk', 'Xa0lH', 
-           'Xa0sC', 'Xa0sE', 'Xa1GB', 'Xa25J', 'Xa3ez', 'XaA1S', 'XabVp', 'XaE74', 
-           'XaIKB', 'XaIKC', 'XaKyY', 'XaOfZ', 'XE17j', 'XE1aG', 'XE1Xs', 'XE1Xu', 
-           'XE1Z6', '.3AE3', '.3AE4', '.3AE5', '.3AE6', '.66h.', '.6AB.', '.9hD1', 
-           '.9Ou.', '.9Ou1', '.9Ou2', '.9Ou3', '.9Ou4', '.9Ou5', '3AE3.', '3AE4.', 
-           '3AE5.', '3AE6.', '66h..', '6AB..', '8BM02', '8BM50', '8BPa.', '8CMe0', 
-           '8CMG2', '8CMZ.', '8CMZ0', '8CMZ1', '8CMZ2', '8CMZ3', '8CSA.', '8IAe0', 
-           '8IAe2', '9hD1.', '9Ou.',  '9Ou1.', '9Ou2.', '9Ou3.', '9Ou4.', '9Ou5.', 
-           'Xa0fZ', 'XaaBZ', 'XaaeA', 'XaaiW', 'Xabd2', 'Xabd3', 'XabEk', 'XabEl', 
-           'XabtQ', 'XacIx', 'XacIy', 'XacIz', 'XacJ0', 'XacLx', 'Xacly', 'Xaclz', 
-           'XacM2', 'Xaefu', 'XaJBQ', 'XaJBU', 'XaJBV', 'XaJBW', 'XaJBX', 'XaJPy', 
-           'XaLFf', 'XaLFo', 'XaLFp', 'XaMFy', 'XaMG0', 'XaMGF', 'XaMGG', 'XaMGI', 
-           'XaMGJ', 'XaMGK', 'XaMJC', 'XaYFR', 'XaYPX', 'XaZqJ', 'XaZWz',
-           'S12', 'S120', 'S121', 'S122', 'S127', 'S128', 'S129', 'S22', 'S220', 
-           'S221', 'S222', 'S223', 'S224', 'S225', 'S228', 'S229',  'S320', 'S32', 
-           'S321', 'S322', 'S323', 'S324', 'S325', 'S327', 'S328', 'S42', 'S420', 
-           'S421', 'S422', 'S423', 'S424', 'S427', 'S428', 'S429', 'S52', 'S520',
-           'S521', 'S522', 'S523', 'S524', 'S525', 'S526', 'S527', 'S528', 'S529', 
-           'S62', 'S620', 'S621', 'S622', 'S623', 'S624', 'S625', 'S626', 'S627', 
-           'S628', 'S72', 'S720', 'S721', 'S722', 'S723', 'S724', 'S727', 'S728', 
-           'S729', 'S82', 'S820', 'S821', 'S822', 'S823', 'S824', 'S825', 'S826',
-           'S827', 'S828', 'S829', 'S92', 'S920', 'S921', 'S922', 'S923', 'S924', 
-           'S925', 'S927', 'S929', 'T02', 'T020', 'T021', 'T022', 'T023', 'T024', 
-           'T025', 'T026', 'T027', 'T028', 'T029', accident_codes),
-  source = c('icd10', 'icd9', rep('icd10', 29),
+           '800', '8000', '8001', '8002', '8003', '801', '8010', '8011',
+           accident_codes),
+  source = c('icd10', 'icd9', rep('icd9', 8), rep('icd10', 23),
+             rep('icd10', 37), rep('icd9', 8),
              rep('icd9', 11), rep('read2', 93), rep('read3', 202),
              rep('icd10', 95), rep('icd10', length(accident_codes))))
 
 diagnosis_codes$n <- NA
+diagnosis_codes <- diagnosis_codes %>%
+  distinct(disorder, code, .keep_all = TRUE)
 
-# remove duplicate codes and match codes with descriptions
-test <- list()
-
+# match codes with descriptions
 inpatient <- inpatient %>% arrange(date)
 for (d in c('icd9', 'icd10')){
   for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
@@ -552,8 +517,6 @@ for (d in c('icd9', 'icd10')){
       length(inpatient$diagnosis[inpatient$version == d & inpatient$code == diagnosis])
   }
 }
-inpatient <- inpatient %>%
-  filter(!is.na(diagnosis))
 
 
 
@@ -573,20 +536,6 @@ for (d in c('read2', 'read3')){
   }
 }
 
-
-
-
-## dementia GP
-dementia_gp <- gp_diagnoses %>%
-  filter(!is.na(diagnosis)) %>%
-  distinct(id, .keep_all = TRUE) %>%
-  select(id, date_primary) %>%
-  rename(dementia_gp_date = date_primary)
-dementia_gp$dementia_gp <- 1
-dementia_gp$dementia_gp[is.na(dementia_gp$dementia_gp_date)] <- 999
-dementia_gp <- merge(dementia_gp, select(dementia, id), 
-                     by = 'id', all.y = TRUE)
-dementia_gp$dementia_gp[is.na(dementia_gp$dementia_gp_date)] <- 0
 
 
   
@@ -640,16 +589,16 @@ tinnitus_sr[is.na(tinnitus_sr)] <- 0
 
 
 
-## any fracture
-fract_any <- inpatient %>%
-  filter(diagnosis == 'fract_any') %>%
+## hip fracture
+hip_fract <- inpatient %>%
+  filter(diagnosis == 'hip_fract') %>%
   select(id, date) %>%
-  rename(fract_any_date = date) %>%
+  rename(hip_fract_date = date) %>%
   distinct(id, .keep_all = TRUE)
-fract_any$fract_any <- 1
-fract_any <- merge(fract_any, select(dems, id), 
-                     by = 'id', all.y = TRUE)
-fract_any$fract_any[is.na(fract_any$fract_any_date)] <- 0
+hip_fract$hip_fract <- 1
+hip_fract <- merge(hip_fract, select(dems, id), 
+                   by = 'id', all.y = TRUE)
+hip_fract$hip_fract[is.na(hip_fract$hip_fract_date)] <- 0
 
 
 
