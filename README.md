@@ -18,15 +18,17 @@ Field ID | Description
 `40022`, `41270`, `41271`, `41280`, `41281` |	Hospital inpatient data
 `42014` |	Asthma date
 `42018` |	Dementia date
+`709`, `1031`, `6160` | Social isolation
+`4803` | Tinnitus
 `130890 - 130902` * |	Mood disorder date
 `131258 - 131261` |	Hearing loss date
-`131296 - 131306` * |	Heart disease date
 `131438 - 131456` * |	Influenza/pneumonia date
 `131484 - 131498` * |	Lower respiratory system disorder date
 `131658 - 131670` * |	Liver disease date
 `132460` |	Congenital hearing problem date
 `130000 - 130344` * |	Infection or parasitic disease date
 `131696 - 131838` * |	Skin disorder date
+`131604 - 131608` * | Appendicitis
 `41259` |	Hospital inpatient records ("hesin.txt")
 `42038` | GP prescription records ("gp_registrations.txt")
 `42039` | GP prescription records ("gp_scripts.csv")
@@ -42,7 +44,7 @@ Additionally, the following files are required:
 
 ## Running the code
 1. Download the contents of this repository and extract them to the folder that will contain all the code, datasets, and variables derived in the process of data preparation.
-2. Install R version 4.3.2 and run the following (choose "activate the project and use the project library" when prompted):
+2. Install R version 4.3.3 and run the following (choose "activate the project and use the project library" when prompted):
 ```R
   install.packages('renv')
   renv::restore()
