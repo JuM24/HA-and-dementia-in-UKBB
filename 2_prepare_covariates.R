@@ -278,12 +278,9 @@ mood_ado$mood_dis_date[mood_ado$mood_dis_date == as.Date('1902-02-02', format = 
 
 
 ## deprivation
-deprivation <- read.csv('D://Job/Raw data/deprivation.csv')
-#deprivation <- data_all %>% 
-#  select(c(eid, starts_with(c('X189')))) %>%
-#  rename(id = eid, deprivation = X189.0.0)
-# TODO: remove below two lines when id confusion clarifies
-deprivation <- filter(deprivation, !id %in%opt_outs$id)
+deprivation <- data_all %>% 
+  select(c(eid, starts_with(c('X189')))) %>%
+  rename(id = eid, deprivation = X189.0.0)
 
 
 
