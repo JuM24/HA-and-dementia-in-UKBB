@@ -105,7 +105,6 @@ able to use hearing aid,Xa2yV,read3,ha,
 unable to use hearing aid,Xa2yW,read3,ha,
 does use hearing aid,Xa2yX,read3,ha,
 uses hearing aid,Xa2yX,read3,ha,
-does not use hearing aid,Xa2yY,read3,ha,
 difficulty using hearing aid,Xa2yZ,read3,ha,
 attention to hearing aid,Xa4hp,read3,ha,
 fit ear mould for existing hearing aid,Xa4hs,read3,ha,
@@ -251,7 +250,7 @@ deafness earpits syndrome,X00ke,read3,hl,0
 deafness nos,F59z.,read2,hl,0
 deafness nos,F59z.,read3,hl,0
 deafness nos,XE17P,read3,hl,0
-deafness or hearing loss,V192,icd9,hl,0
+deafness or hearing loss,V192,icd10,hl,0
 deafness remedial therapy,8E3..,read2,hl,0
 deafness remedial therapy,8E3..,read3,hl,0
 deafness remedial therapy nos,8E3Z.,read2,hl,0
