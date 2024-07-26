@@ -6,8 +6,6 @@ source('0_helper_functions.R')
 opt_outs <- read.csv('participant_opt_out.csv')
 
 # import the file with all the hearing loss and hearing aid UKB variables
-# field IDs 2247, 2257, 4849, 3393, 20019, 20021, 131258, 131260, 131259, 131261, 4792, 132460
-
 hear <- readRDS('main_vars.Rds') %>%
   filter(!eid %in% opt_outs$id) %>%
   select(eid, starts_with(c('X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 
@@ -257,13 +255,15 @@ saveRDS(hear, file = 'hearing_masterfile.rds')
 
 
 ### Addition of new variables relevant for analysis ###
-# create a variable for hearing loss according to both questions from self-report. An affirmative answer to
-# default is 0; both hearing loss questions results in a hearing-loss coding (1); all other combinations of responses
+# create a variable for hearing loss according to both questions from self-report. 
+# An affirmative answer to default is 0; both hearing loss questions results in 
+# a hearing-loss coding (1); all other combinations of responses
 # are NA as previously done in 10.1016/j.ajhg.2019.09.008
 hear$hear_dif_both_0 <- rowSums(hear[ , c('hear_dif_0', 'hear_difn_0')], na.rm = TRUE)
 # NA if both of them are NA
 hear$hear_dif_both_0[is.na(hear$hear_dif_0) & is.na(hear$hear_difn_0)] <- NA
-# NA if one of them is 1 and the other one is NA (because they would be classified as having hearing loss if the other one was 1)
+# NA if one of them is 1 and the other one is NA 
+# (because they would be classified as having hearing loss if the other one was 1)
 hear$hear_dif_both_0[is.na(hear$hear_dif_0) & hear$hear_difn_0 == 1] <- NA 
 hear$hear_dif_both_0[hear$hear_dif_0 == 1 & is.na(hear$hear_difn_0)] <- NA
 
@@ -282,7 +282,8 @@ hear$hear_dif_both_3[is.na(hear$hear_dif_3) & is.na(hear$hear_difn_3)] <- NA
 hear$hear_dif_both_3[is.na(hear$hear_dif_3) & hear$hear_difn_3 == 1] <- NA
 hear$hear_dif_both_3[hear$hear_dif_3 == 1 & is.na(hear$hear_difn_3)] <- NA
 
-# add the diagnoses identified by UKB 'first occurrences ID fields' but unidentified by my search of the EHR; get earliest of both UKB dates
+# add the diagnoses identified by UKB 'first occurrences ID fields' but 
+# unidentified by my search of the EHR; get earliest of both UKB dates
 hear$hear_loss_a <- 0; hear$hear_loss_a[!is.na(hear$date_hear_loss_a)] <- 1
 hear$hear_loss_b <- 0; hear$hear_loss_b[!is.na(hear$date_hear_loss_b)] <- 1
 hear$date_hear_loss_a[as.character(hear$date_hear_loss_a) %in% 
@@ -293,22 +294,28 @@ hear$date_hear_loss_b[as.character(hear$date_hear_loss_b) %in%
                           '1902-02-02', '1903-03-03')] <- NA
 hear$date_hear_loss_a <- as.Date(hear$date_hear_loss_a, format = '%Y-%m-%d')
 hear$date_hear_loss_b <- as.Date(hear$date_hear_loss_b, format = '%Y-%m-%d')
-hear$hear_loss_a_nodate[hear$hear_loss_a == 1] <- 0 # create 'nodate' variable that indicates lack of date of diagnosis
+# create 'nodate' variable that indicates lack of date of diagnosis
+hear$hear_loss_a_nodate[hear$hear_loss_a == 1] <- 0 
 hear$hear_loss_b_nodate[hear$hear_loss_b == 1] <- 0
 hear$hear_loss_a_nodate[hear$hear_loss_a == 1 & is.na(hear$date_hear_loss_a)] <- 1
 hear$hear_loss_b_nodate[hear$hear_loss_b == 1 & is.na(hear$date_hear_loss_b)] <- 1
 
-# combine both types of hearing loss from first occurrences; determine if in those with loss at least one date is not missing
-hear$hear_loss_ab_nodate[hear$hear_loss_a == 1 | hear$hear_loss_b == 1] <- 0 # if at least one of them has a date, that it's fine
-hear$hear_loss_ab_nodate[(hear$hear_loss_a_nodate == 1 & is.na(hear$hear_loss_b_nodate)) | # if the one we have a diagnosis for doesn't have a date, that's not fine
+# combine both types of hearing loss from first occurrences; determine if in those 
+# with loss at least one date is not missing
+# if at least one of them has a date, that it's fine
+hear$hear_loss_ab_nodate[hear$hear_loss_a == 1 | hear$hear_loss_b == 1] <- 0 
+# if the one we have a diagnosis for doesn't have a date, that's not fine
+hear$hear_loss_ab_nodate[(hear$hear_loss_a_nodate == 1 & is.na(hear$hear_loss_b_nodate)) | 
                            (hear$hear_loss_b_nodate == 1 & is.na(hear$hear_loss_a_nodate)) |
                            (hear$hear_loss_a_nodate == 1 & hear$hear_loss_b_nodate == 1)] <- 1
 
 # get earliest of both UKB dates and set that as the source of the diagnosis
 hear <- hear %>%
   mutate(date_hear_loss_ab = pmin(date_hear_loss_a, date_hear_loss_b, na.rm = TRUE),
-         source_hear_loss_ab = ifelse((date_hear_loss_a < date_hear_loss_b & !is.na(date_hear_loss_a)) | 
-                                        is.na(date_hear_loss_b), source_hear_loss_a, source_hear_loss_b))
+         source_hear_loss_ab = ifelse((date_hear_loss_a < date_hear_loss_b & 
+                                         !is.na(date_hear_loss_a)) | 
+                                        is.na(date_hear_loss_b), 
+                                      source_hear_loss_a, source_hear_loss_b))
 
 # now let's include the objective hearing assessment (SRT)
 # create a new variable indicating SRT for 'better' ear for each visit (lower score means better hearing)
@@ -330,8 +337,10 @@ hear$srt_min_3[(is.na(hear$srt_r_3) | is.na(hear$srt_l_3)) &
                  !hear$hear_test_3 %in% c(11, 12)] <- NA
 
 
-# new variable indicating hearing problems according to any of our criteria: (1) self-report (2 indicates affirmative answers to both questions, 
-# 99 indicates deafness),(2) hearing loss acc. to our search of the EHR, (3) SRT, and (4) first-occurrences variables in UKB
+# new variable indicating hearing problems according to any of our criteria: 
+# (1) self-report (2 indicates affirmative answers to both questions, 
+# 99 indicates deafness),(2) hearing loss acc. to our search of the EHR, 
+# (3) SiN, and (4) first-occurrences variables in UKB
 # this is how we will define hearing loss for the RCT emulation part
 hear <- hear %>%
   mutate(hear_loss_any = ifelse((!is.na(hear_dif_both_0) & hear_dif_both_0 %in% c(2, 99)) | 
@@ -346,30 +355,39 @@ hear <- hear %>%
                                   (!is.na(hear_loss_a) & hear_loss_a == 1) |
                                   (!is.na(hear_loss_b) & hear_loss_b == 1), 1, 0))
 
-# assign date to hearing loss corresponding to date of assessment if hearing loss was established at that assessment (i.e., through self-report or SRT)
+# assign date to hearing loss corresponding to date of assessment if hearing loss 
+# was established at that assessment (i.e., through self-report or SRT)
 # assessment 0
 hear$date_hear_loss_0[((hear$hear_dif_both_0 == 2 | hear$hear_dif_both_0 == 99) & 
-                         !is.na(hear$hear_dif_both_0)) | (hear$srt_min_0 > -5.5  & !is.na(hear$srt_min_0))] <- 
+                         !is.na(hear$hear_dif_both_0)) | (hear$srt_min_0 > -5.5  & 
+                                                            !is.na(hear$srt_min_0))] <- 
   hear$date_0[((hear$hear_dif_both_0 == 2 | hear$hear_dif_both_0 == 99) & 
-                 !is.na(hear$hear_dif_both_0)) | (hear$srt_min_0 > -5.5 & !is.na(hear$srt_min_0))]
+                 !is.na(hear$hear_dif_both_0)) | (hear$srt_min_0 > -5.5 & 
+                                                    !is.na(hear$srt_min_0))]
 hear$date_hear_loss_0 <- as.Date(hear$date_hear_loss_0)
 # assessment 1
 hear$date_hear_loss_1[((hear$hear_dif_both_1 == 2 | hear$hear_dif_both_1 == 99) & 
-                         !is.na(hear$hear_dif_both_1)) | (hear$srt_min_1 > -5.5  & !is.na(hear$srt_min_1))] <- 
+                         !is.na(hear$hear_dif_both_1)) | (hear$srt_min_1 > -5.5  & 
+                                                            !is.na(hear$srt_min_1))] <- 
   hear$date_1[((hear$hear_dif_both_1 == 2 | hear$hear_dif_both_1 == 99) & 
-                 !is.na(hear$hear_dif_both_1)) | (hear$srt_min_1 > -5.5 & !is.na(hear$srt_min_1))]
+                 !is.na(hear$hear_dif_both_1)) | (hear$srt_min_1 > -5.5 & 
+                                                    !is.na(hear$srt_min_1))]
 hear$date_hear_loss_1 <- as.Date(hear$date_hear_loss_1)
 # assessment 2
 hear$date_hear_loss_2[((hear$hear_dif_both_2 == 2 | hear$hear_dif_both_2 == 99) & 
-                         !is.na(hear$hear_dif_both_2)) | (hear$srt_min_2 > -5.5  & !is.na(hear$srt_min_2))] <- 
+                         !is.na(hear$hear_dif_both_2)) | (hear$srt_min_2 > -5.5  & 
+                                                            !is.na(hear$srt_min_2))] <- 
   hear$date_2[((hear$hear_dif_both_2 == 2 | hear$hear_dif_both_2 == 99) & 
-                 !is.na(hear$hear_dif_both_2)) | (hear$srt_min_2 > -5.5 & !is.na(hear$srt_min_2))]
+                 !is.na(hear$hear_dif_both_2)) | (hear$srt_min_2 > -5.5 & 
+                                                    !is.na(hear$srt_min_2))]
 hear$date_hear_loss_2 <- as.Date(hear$date_hear_loss_2)
 # assessment 3 
 hear$date_hear_loss_3[((hear$hear_dif_both_3 == 2 | hear$hear_dif_both_3 == 99) & 
-                         !is.na(hear$hear_dif_both_3)) | (hear$srt_min_3 > -5.5  & !is.na(hear$srt_min_3))] <- 
+                         !is.na(hear$hear_dif_both_3)) | (hear$srt_min_3 > -5.5 & 
+                                                            !is.na(hear$srt_min_3))] <- 
   hear$date_3[((hear$hear_dif_both_3 == 2 | hear$hear_dif_both_3 == 99) & 
-                 !is.na(hear$hear_dif_both_3)) | (hear$srt_min_3 > -5.5 & !is.na(hear$srt_min_3))]
+                 !is.na(hear$hear_dif_both_3)) | (hear$srt_min_3 > -5.5 & 
+                                                    !is.na(hear$srt_min_3))]
 hear$date_hear_loss_3 <- as.Date(hear$date_hear_loss_3)
 
 # find earliest hearing loss date among all sources
