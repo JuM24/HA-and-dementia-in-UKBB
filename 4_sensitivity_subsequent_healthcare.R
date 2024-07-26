@@ -1,6 +1,6 @@
-# This code cleans the data before analysis.
+# analogous to `4_clean_data.R` but prepared to estimate the effect of HA on
+# subsequent(post-randomisation) healthcare usilisation
 
-# hearing aid emulation
 library(tidyverse)
 library(MatchIt)
 
@@ -12,7 +12,7 @@ hear <- readRDS('hearing_masterfile_prepped.rds')
 cens_dates <- readxl::read_excel('censoring_dates.xlsx')
 cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
 
-# We are interested in only those participants that have hearing loss; 
+# we are interested in only those participants that have hearing loss; 
 # thus, we remove participants without it. We do not keep those with congenital hearing loss.
 # we also remove those with cochlear implants, as they cannot remove them before the SRT
 hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
@@ -31,15 +31,15 @@ hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any &
                              (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
 
 
-# Remove those with dementia before or at the same date as hearing loss.
+# remove those with dementia before or at the same date as hearing loss
 hear <- filter(hear, dementia == 0 | (date_hear_loss_any < dementia_date))
 
-# Remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline.
+# remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline
 no_aid_date <- filter(hear, hear_aid_any == 0 & hear_aid_nodate == 1)
 hear <- filter(hear, !id %in% no_aid_date$id) %>%
   filter(hear_loss_any == 0 | !is.na(date_hear_loss_any))
 
-# Select only those that were diagnosed with HL before getting HA
+# select only those that were diagnosed with HL before getting HA
 hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_any))
 
 
@@ -50,10 +50,10 @@ hear <- find_closest_non_missing(hear, 'srt_min', date_hear_loss_any = 'date_hea
 hear <- find_closest_non_missing(hear, 'tinnitus_sr', date_hear_loss_any = 'date_hear_loss_any')
 hear <- find_closest_non_missing(hear, 'soc_isol', date_hear_loss_any = 'date_hear_loss_any')
 
-# Those without imputed censoring date get the value '0' for data provider value
+# those without imputed censoring date get the value '0' for data provider value
 hear$data_provider_last[is.na(hear$data_provider_last)] <- '0'
 hear$data_provider_last <- as.factor(hear$data_provider_last)
-# Same for data provider used as confounder
+# same for data provider used as confounder
 hear$data_provider_freq[is.na(hear$data_provider_freq)] <- '0'
 hear$data_provider_freq <- as.factor(hear$data_provider_freq)
 
@@ -69,7 +69,7 @@ hear$data_cens_date[hear$data_provider_last == '0'] <-
   min(cens_dates$date[cens_dates$disorder == 'dementia'])
 hear$data_cens_date <- zoo::as.Date(hear$data_cens_date)
 
-# set the censoring dates to the date that occurs earlier.
+# set the censoring dates to the date that occurs earlier
 hear <- hear %>%
   mutate(censor_date = reduce(across(c('dementia_date', 'death_date', 'follow_loss_date',
                                        'data_cens_date')), pmin, na.rm = TRUE))
@@ -78,7 +78,7 @@ hear <- hear %>%
 hear$dementia[hear$censor_date < hear$dementia_date] <- 0
 hear$death[hear$censor_date < hear$death_date] <- 0
 
-# Some will have experienced HL only after the censoring date; remove those.
+# some will have experienced HL only after the censoring date; remove those
 hear <- filter(hear, date_hear_loss_any < censor_date)
 
 # age at HL
@@ -111,7 +111,7 @@ hear <- hear %>% drop_na(any_of(c('age_USE', 'sex', 'education_USE', 'deprivatio
 
 
 
-# To factors.
+# to factors
 hear <- hear %>% mutate(across(c(education_USE, sex, data_provider_freq, 
                                  soc_isol_USE, mood_dis, tinnitus_sr_USE,
                                  ethnicity), 
