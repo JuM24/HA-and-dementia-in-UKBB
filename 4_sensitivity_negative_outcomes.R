@@ -1,6 +1,6 @@
-# choose alternative outcome name (default is 'dementia'); can be any among
-# c('hepatic', 'heart', 'respiratory', 'asthma', 'skin_dis', 'infect', 'flu',
-# 'appendicitis', 'fract_any', 'trans_acc')
+# the same as `4_clean_data.R` but for negative control outcomes and without
+# the per-protocol approach (so only intention-to-treat)
+
 outcomes <- c('hepatic', 'heart', 'respiratory', 'asthma', 'skin_dis', 'infect', 
               'flu', 'appendicitis', 'hip_fract', 'trans_acc')
 
@@ -10,8 +10,8 @@ source('0_helper_functions.R')
 
 for (outcome in outcomes){
   
-  
-  # convert the strings to symbols (the '!!' is then later used within `dplyr` to unquote the symbol)
+  # convert the strings to symbols 
+  # (the '!!' is then later used within `dplyr` to unquote the symbol)
   outcome_date <- paste0(outcome, '_date')
   outcome_sym <- rlang::sym(outcome)
   outcome_date_sym <- rlang::sym(outcome_date)
@@ -22,9 +22,9 @@ for (outcome in outcomes){
   cens_dates <- readxl::read_excel('censoring_dates.xlsx')
   cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
   
-  # We are interested in only those participants that have hearing loss; thus, we remove participants without it.
-  # We do not keep those with congenital hearing loss.
-  # we also remove those with cochlear implants, as they cannot remove them before the SRT
+  # we are interested in only those participants that have hearing loss; remove those without
+  # we do not keep those with congenital hearing loss
+  # we also remove those with cochlear implants, as they cannot remove them before the SiN
   hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
                    is.na(hear_congenital) & cochl_impl_any == 0 | 
                    (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
@@ -41,15 +41,15 @@ for (outcome in outcomes){
                                (hear$hear_aid_any == 0 & hear$cochl_impl_any == 1)]
   
   
-  # Remove those with outcome before or at the same date as hearing loss.
+  # remove those with outcome before or at the same date as hearing loss
   hear <- filter(hear, !!outcome_sym == 0 | (date_hear_loss_any < !!outcome_date_sym))
   
-  # Remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline.
+  # remove those without dates of hearing loss or hearing aid because it prevents us from ascertaining the timeline
   no_aid_date <- filter(hear, hear_aid_any == 0 & hear_aid_nodate == 1)
   hear <- filter(hear, !id %in% no_aid_date$id) %>%
     filter(hear_loss_any == 0 | !is.na(date_hear_loss_any))
   
-  # Select only those that were diagnosed with HL before getting HA
+  # select only those that were diagnosed with HL before getting HA
   hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_any))
   
   # determine the assessment that is closest to HL start and which will be used for covariate measurement 
@@ -87,7 +87,7 @@ for (outcome in outcomes){
   hear[[outcome_sym]][hear$censor_date < hear[[outcome_date_sym]]] <- 0
   hear$death[hear$censor_date < hear$death_date] <- 0
   
-  # Some will have experienced HL only after the censoring date; remove those.
+  # some will have experienced HL only after the censoring date; remove those
   hear <- filter(hear, date_hear_loss_any < censor_date)
   
   # age at HL
