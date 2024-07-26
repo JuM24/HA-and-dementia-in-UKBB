@@ -205,7 +205,7 @@ gp_all <- merge(gp_all, (hear %>% select(id, data_provider_last_gp)),
                 all.x = TRUE)
 
 # import registration periods
-data_period <- read.csv('data_period.csv', row.names = 1) %>%
+data_period <- readRDS('data_period.Rds') %>%
   rename(id = eid)
 data_period$from <- as.Date(data_period$from, format = '%Y-%m-%d')
 data_period$to <- as.Date(data_period$to, format = '%Y-%m-%d')
