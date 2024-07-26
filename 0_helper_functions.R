@@ -118,6 +118,7 @@ find_closest_non_missing_before_0 <- function(df, var_prefix, date_hear_loss_any
 }
 
 
+# classification of education into three levels in UKBB
 education_classify <- function(x){
   if (any((x == 1 | x == 6) & !is.na(x), na.rm = TRUE)){
     return(3)
@@ -128,4 +129,17 @@ education_classify <- function(x){
   } else {
     return(NA)
   }
+}
+
+
+# survival plots for imputed data
+analyse_imputed_data <- function(dataset) {
+  dataset$follow_up <- as.numeric(dataset$follow_up)
+  surv_obj <- Surv(time = dataset$follow_up, event = dataset$dementia)
+  surv_weighted <- survfit(surv_obj ~ hear_aid_any, data = dataset, weights = dataset$weights)
+  df_surv <- broom::tidy(surv_weighted)
+  df_surv <- df_surv %>%
+    mutate(cloglog = log(-log(1-estimate)))
+  
+  return(df_surv)
 }
