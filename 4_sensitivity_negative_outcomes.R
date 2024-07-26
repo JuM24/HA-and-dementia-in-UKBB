@@ -114,7 +114,7 @@ for (outcome in outcomes){
              min_diff_srt_min <= 5*365.25 &
              min_diff_tinnitus_sr <= 5*365.25)
   
-  # To factors.
+  # to factors
   hear <- hear %>% mutate(across(c(education_USE, sex, data_provider_freq, 
                                    soc_isol_USE, mood_dis, tinnitus_sr_USE,
                                    ethnicity), as.factor))
