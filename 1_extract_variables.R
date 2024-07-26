@@ -59,4 +59,4 @@ main_vars <- ukb %>%
       'X131260.', 'X131259.', 'X131261.', 'X4792.', 'X132460.'))))
 saveRDS(main_vars, file = 'main_vars.Rds')
 
-rm(list = ls())
+rm(list = ls()); gc()
