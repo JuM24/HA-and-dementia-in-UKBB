@@ -56,7 +56,9 @@ main_vars <- ukb %>%
       'X40022.', 'X41270.', 'X41280.', 'X41271.', 'X41281.', # inpatient data
       # hearing-related codes
       'X2247.', 'X2257.', 'X4849.', 'X3393.', 'X20019.', 'X20021.', 'X131258.', 
-      'X131260.', 'X131259.', 'X131261.', 'X4792.', 'X132460.'))))
+      'X131260.', 'X131259.', 'X131261.', 'X4792.', 'X132460.',
+      # auxiliary variables for multiple imputation
+      'X48.', 'X1558.', 'X6164.', 'X20116.'))))
 saveRDS(main_vars, file = 'main_vars.Rds')
 
 rm(list = ls()); gc()
