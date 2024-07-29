@@ -51,4 +51,4 @@ Additionally, the following files are required:
 ```
 `renv::restore()` might need to be run again to install the correct versions of the required packages.
 
-1. Run the scripts with the prefixes "`1_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
+1. Run the scripts with the prefixes "`0_`" to "`6_`" sequentially to reproduce the results. Short descriptions are available within each script.
