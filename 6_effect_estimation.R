@@ -17,46 +17,64 @@
 
 ## analysis 5:
 # - different data cleaning to prepare for analysis using imputed data;
-#   SEE BELOW SCRIPT
-
-## analysis 3:
-# - addition of covariates `soc_isol_USE`, `mood_dis` to matching and effect estimation
-
-
-
-## analysis 5:
-  # - addition of covariate `hear_loss_origin_simple` to matching and effect estimation
+#   SEE SCRIPT BELOW
 
 ## analysis 6:
-  # - addition of covariate `inpatient_contact_cat` to matching and effect estimation
+# - addition of covariates `soc_isol_USE`, `mood_dis` to matching and effect estimation
 
 ## analysis 7:
-hear$dementia_all <- hear$dementia
-hear$dementia_all[hear$dementia_gp == 1] <- 1
-  # - addition of covariates `inpatient_contact_cat`, `presc_contact`, `diag_contact` 
-  #   to matching and effect estimation
+# - addition of covariate `head_inj` to matching and effect estimation
 
-## analysis 8
-  # - replace the variable `dementia` with `flu`
+## analysis 8:
+  # - addition of covariate `hear_loss_origin_simple` to matching and effect estimation
 
-## analysis 9
-  # - replace the variable `dementia` with `hepatic`
+## analysis 9:
+  # - addition of covariate `inpatient_contact_cat` to matching and effect estimation
 
-## analysis 10
-  # - replace the variable `dementia` with `heart`
+## analysis 10:
+  # - removal of participants without primary care data (NAs for `gp_contact_cat`)
+  # - addition of covariate `gp_contact_cat` to matching and effect estimation
 
-## analysis 11
-  # - replace the variable `dementia` with `respiratory`
+## analysis 11:
+# - removal of participants without primary care data (NAs for `gp_contact_cat`)
+# - addition of covariates `inpatient_contact_cat` and `gp_contact_cat` 
+#   to matching and effect estimation
 
 ## analysis 12
-  # - replace the variable `dementia` with `asthma`
+  # - replace the variable `dementia` with `flu`
 
 ## analysis 13
-  # - replace the variable `dementia` with `skin`
+  # - replace the variable `dementia` with `hepatic`
 
 ## analysis 14
+  # - replace the variable `dementia` with `respiratory`
+
+## analysis 15
+  # - replace the variable `dementia` with `asthma`
+
+## analysis 16
+  # - replace the variable `dementia` with `skin`
+
+## analysis 17
   # - replace the variable `dementia` with `infect`
 
+## analysis 18
+# - replace the variable `dementia` with `appendicitis`
+
+## analysis 19
+# - replace the variable `dementia` with `hip_fract`
+
+## analysis 20
+# - replace the variable `dementia` with `trans_acc`
+
+## SEE BELOW for other sensitivity analyses
+
+
+
+
+
+
+### 1. Main analysis for dementia using intention-to-treat ###
 
 library(tidyverse)
 library(MatchIt)
@@ -139,7 +157,7 @@ broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
 
 ### ANALYSIS 5 ###
 
-## Analysis on imputed dataset (as opposed to removing missing values)
+## Analysis on imputed dataset (as opposed to complete-case analysis)
 library(future)
 
 hear <- readRDS('hearing_masterfile_prepped.rds')
@@ -184,15 +202,6 @@ hear <- filter(hear, hear_aid_any == 0 | (date_hear_loss_any <= date_hear_aid_an
 # before determining the assessment to use, set dummy values to NAs
 # for participants that partook in the assessments (only those that 
 # assessments are "truly" missing)
-
-# get info on SiN administration
-#data_all <- readRDS('main_vars.Rds') %>%
-#  select(eid, starts_with(c('X4268.', 'X4275.'))) %>%
-#  rename(id = eid)
-
-#hear <- merge(hear, data_all, by = 'id', all.x = TRUE)
-
-
 # education, g, srt_min, tinnitus_sr: these variables were measured during
 # assessments, so they have dates associated with them, but no variable values
 # in case they are missing;
@@ -416,14 +425,6 @@ combined_results <- combined_results %>%
   )
 
 ggplot(combined_results, aes(x = time, y = pooled_surv, color = strata, linetype = strata)) +
-  geom_line(size = 1) +
-  labs(title = "Pooled Survival Curves", x = "Time", y = "Survival Probability", color = "Group", linetype = "Group") +
-  theme_minimal()
-
-
-df_surv <- broom::tidy(surv_weighted)
-
-ggplot(combined_results, aes(x = time, y = pooled_surv, color = strata, linetype = strata)) +
   geom_step() +
   scale_color_brewer(palette='Set1') + 
   scale_fill_brewer(palette='Set1') +
@@ -451,10 +452,11 @@ hear_inpatient <- readRDS('hearing_masterfile_subsequent_healthcare_ITT.rds')
 hear_gp <- hear_inpatient %>%
   filter(!is.na(gp_contact_cat))
 
-# comparisons of each group with zero group for inpatient contact (TRY SURVEY GAM)
+# comparisons of each group with zero group for inpatient contact
 set.seed(6)
-m.inpatient <- matchit(formula = hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
-                         srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+m.inpatient <- matchit(formula = hear_aid_any ~ age_USE + sex + education_USE + 
+                         deprivation + g_USE + srt_min_USE + data_provider_freq + 
+                         tinnitus_sr_USE + ethnicity_simple, 
                        data = hear_inpatient,
                        method = 'quick', distance = 'nnet', estimand = 'ATE',
                        distance.options = list(size = 250, maxit = 200, MaxNWts = 8000, seed = 6))
@@ -478,19 +480,6 @@ for (group in as.character(seq(2, 4))){
                                                     transform = 'exp')
   print(subset_comparison)
 }
-
-# TRY THIS
-dsn = svydesign(ids =~subclass, weights=~weights, data=md_inpatient)
-fit <- svyVGAM::svy_vglm(b_ivfio_r~ a_sex+a_dvage+as.factor(a_ethn_dv)+as.factor(a_country)+a_employ+as.factor(a_marstat)+b_employ+as.factor(b_marstat),
-                         design = svydesign,
-                         family=multinomial(refLevel = 1))
-
-fit <- svyVGAM::svy_vglm(inpatient_contact_cat ~ hear_aid_any * (age_USE + education_USE + sex + deprivation + 
-                                                                             g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
-                         design = dsn,
-                         family=VGAM::multinomial(refLevel = 1))
-
-
 
 # comparisons of each group with zero group for GP contact
 m.gp <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
@@ -587,117 +576,3 @@ se <- sqrt(cov_robust[2,2])
 critical_value <- qt(0.975, df = df.residual(fit))
 lower_bound <- exp(coef(fit)[2] - critical_value * se)
 upper_bound <- exp(coef(fit)[2] + critical_value * se)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Forest plots
-
-# basic model and sensitivity analyses
-rrs_3 <- read.csv('rrs.csv') %>%
-  filter(fig == '3')
-
-# Categorize rows
-rrs_3 <- rrs_3 %>%
-  mutate(category = case_when(
-    row_number() %in% 1:2 ~ 'Basic',
-    row_number() %in% 3:5 ~ 'sample change',
-    row_number() %in% 6:11 ~ 'extra adjust.',
-    row_number() %in% 12:20 ~ 'neg. control',
-  ))
-
-
-# specify levels in the reverse order to keep the desired plot order
-rrs_3$model <- factor(rrs_3$model, levels = rev(rrs_3$model))
-
-# reorder category factor levels to match the legend order
-rrs_3$category <- factor(rrs_3$category, levels = c('Basic', 'sample change', 'extra adjust.', 'neg. control'))
-
-# Custom colors for categories
-category_colors <- c('Basic' = '#316879', 'sample change' = '#81b7d2', 
-                     'extra adjust.' = '#d0944d', 'neg. control' = '#f47a60')
-tiff('Figure 3.tif', units = 'in', width=4, height=5.7, res=300)
-ggplot(rrs_3, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high, color = category)) +
-  geom_pointrange(linewidth = 0.5, size = 0.5) +  
-  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1) + 
-  scale_color_manual(values = category_colors) +
-  coord_flip() + 
-  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
-  
-  theme_minimal() +
-  
-  theme(
-    axis.text.x = element_text(face = 'plain', size = 10, color = 'grey15'),
-    axis.title.x = element_blank(),
-    axis.text.y = element_text(face = 'plain', size = 10, color = 'grey15'),
-    axis.title.y = element_blank(),
-    legend.position = 'none',
-    legend.title = element_text(face = 'bold', size = 0, color = 'grey15'),
-    legend.text = element_text(size = 14, color = 'grey15')
-  ) +
-  
-  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
-dev.off()
-
-
-# effect of HA on healthcare contact
-rrs_4a <- read.csv('rrs.csv') %>%
-  filter(fig == '4a')
-rrs_4a$model <- factor(rrs_4a$model, levels = rev(rrs_4a$model))
-tiff('Figure 4a.tif', units = 'in', width=5, height=2, res=300)
-ggplot(rrs_4a, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high)) +
-  geom_pointrange(linewidth = 0.8, size = 0.7, colour = 'grey40') +  
-  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1, colour = 'grey40') + 
-  coord_flip() + 
-  scale_y_continuous(limits = c(0.96, 1.5), breaks = seq(1, 1.6, by = 0.1)) +
-  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
-  
-  theme_minimal() +
-  
-  theme(
-    axis.text.x = element_text(face = 'plain', size = 12.5, color = 'grey15'),
-    axis.title.x = element_blank(),
-    axis.text.y = element_text(face = 'plain', size = 12.5, color = 'grey15'),
-    axis.title.y = element_blank(),
-  ) +
-  
-  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
-dev.off()
-
-# effect of healthcare contact on dementia
-rrs_4b <- read.csv('rrs.csv') %>%
-  filter(fig == '4b')
-rrs_4b$model <- factor(rrs_4b$model, levels = rev(rrs_4b$model))
-tiff('Figure 4b.tif', units = 'in', width=5, height=2, res=300)
-ggplot(rrs_4b, aes(x = model, y = RR, ymin = RR.CI.low, ymax = RR.CI.high)) +
-  geom_pointrange(linewidth = 0.8, size = 0.7, colour = 'grey40') +  
-  geom_errorbar(aes(ymin = RR.CI.low, ymax = RR.CI.high), width = 0.2, size = 1, colour = 'grey40') + 
-  coord_flip() + 
-  scale_y_continuous(limits = c(0.9, 3.8), breaks = seq(1, 4, by = 0.5)) +
-  labs(x = '', y = 'Risk Ratio (RR)', color = '') +
-  
-  theme_minimal() +
-  
-  theme(
-    axis.text.x = element_text(face = 'plain', size = 12.5, color = 'grey15'),
-    axis.title.x = element_blank(),
-    axis.text.y = element_text(face = 'plain', size = 12.5, color = 'grey15'),
-    axis.title.y = element_blank(),
-  ) +
-  
-  geom_hline(yintercept = 1, linetype = 'dashed', color = 'grey40')
-dev.off()
