@@ -19,8 +19,8 @@ table(hear$hear_aid_any); prop.table(table(hear$hear_aid_any))*100
 table(hear$dementia); prop.table(table(hear$dementia))*100
 
 ## outcomes (causes of censoring) for HA and non-HA groups; 
-# this is by default made for per-protocol; it has to be modified (see below)
-# to display numbers for the intention-to-treat analysis
+# this is by default made for intention-to-treat; it has to be modified (see below)
+# to display numbers for the per-protocol analysis
 ha <- filter(hear, hear_aid_any == 1)
 han <- filter(hear, hear_aid_any == 0)
 

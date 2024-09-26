@@ -436,6 +436,10 @@ hear$hear_loss_origin_simple[hear$hear_loss_origin %in% c('GP', 'inpatient')] <-
 
 
 # earliest date of hearing aid (analogous to above process for hearing loss)
+hear$date_hear_aid_0 <- NA
+hear$date_hear_aid_1 <- NA
+hear$date_hear_aid_2 <- NA
+hear$date_hear_aid_3 <- NA
 hear$date_hear_aid_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)] <- 
   hear$date_0[hear$hear_aid_0 == 1 & !is.na(hear$hear_aid_0)]
 hear$date_hear_aid_1[hear$hear_aid_1 == 1 & !is.na(hear$hear_aid_1)] <- 

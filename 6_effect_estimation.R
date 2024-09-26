@@ -84,7 +84,7 @@ library(survey)
 source('0_helper_functions.R')
 
 # set file name
-file_name <- 'hearing_masterfile_hip_fract_ITT.rds'
+file_name <- 'hearing_masterfile_ITT.rds'
 
 hear <- readRDS(file_name)
 
@@ -111,7 +111,8 @@ plot(m.out, type = 'density', interactive = FALSE,
 # approach to calculate robust CIs using `syvglm()`
 dsn = svydesign(ids =~subclass, weights=~weights, data=md)
 fit = svyglm(dementia ~ hear_aid_any * 
-               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
              design = dsn, family = quasibinomial())
 marginaleffects::comparisons(fit,
                              variables = c('hear_aid_any'),
