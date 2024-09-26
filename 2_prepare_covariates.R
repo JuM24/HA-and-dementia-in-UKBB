@@ -393,8 +393,6 @@ appendicitis$appendicitis[!is.na(appendicitis$appendicitis_date)] <- 1
 
 # This code combines data fields 41270, 41271, 41280, and 41281, 
 # which refer to inpatient diagnoses and dates of admission.
-# For 6 participants, array indexing when combining diagnoses codes and dates fails, 
-# so I used the record-level data to access hospital addmissions for those 6 participants.
 diagnoses <- data_all %>%
   select(eid, starts_with(c('X41270.', 'X41280.', 'X41271.', 'X41281.'))) %>%
   rename(id = eid)
@@ -494,9 +492,7 @@ diagnosis_codes <- data.frame(
            '800', '8000', '8001', '8002', '8003', '801', '8010', '8011',
            accident_codes),
   source = c('icd10', 'icd9', rep('icd9', 8), rep('icd10', 23),
-             rep('icd10', 37), rep('icd9', 8),
-             rep('icd9', 11), rep('read2', 93), rep('read3', 202),
-             rep('icd10', 95), rep('icd10', length(accident_codes))))
+             rep('icd10', 37), rep('icd9', 19), rep('icd10', length(accident_codes))))
 
 diagnosis_codes$n <- NA
 diagnosis_codes <- diagnosis_codes %>%
@@ -518,7 +514,7 @@ for (d in c('icd9', 'icd10')){
 
 
 
-# repeat for primary care (just for dementia)
+# repeat for primary care
 gp_diagnoses <- gp_diagnoses %>% arrange(date_primary)
 for (d in c('read2', 'read3')){
   for (diagnosis in diagnosis_codes$code[diagnosis_codes$source == d]){
@@ -838,9 +834,9 @@ data_provider_last$data_provider_last[data_provider_last$data_provider_last == 4
 
 # merge all data frames in the list
 covariates <- Reduce(function(x, y) merge(x, y, by = 'id', all = TRUE), 
-                     list(dementia, dementia_gp, dems, education, deprivation, 
+                     list(dementia, dems, education, deprivation, 
                           cognition, social, early_cens, mood_ado, outcomes, asthma, 
-                          skin, infect, tinnitus_sr, head_inj, ethnicity, fract_any,
+                          skin, infect, tinnitus_sr, head_inj, ethnicity, hip_fract,
                           trans_acc, appendicitis, data_provider_last, data_provider_freq,
                           gp_reg_freq, gp_reg_last))
 
