@@ -1,23 +1,7 @@
 # This code cleans the data before analysis.
 
-# hearing aid emulation
-library(tidyverse)
-library(MatchIt)
 
-source('0_helper_functions.R')
 
-hear <- readRDS('hearing_masterfile_prepped.rds')
-
-# file with censoring dates
-cens_dates <- readxl::read_excel('censoring_dates.xlsx')
-cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
-
-# we are interested in only those participants that have hearing loss; 
-# thus, we remove participants without it. We do not keep those with congenital hearing loss
-# we also remove those with cochlear implants, as they cannot remove them before the SiN
-hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
-                 is.na(hear_congenital) & cochl_impl_any == 0 | 
-                 (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
 
 # remove those with HL before baseline assessment due to strong selection into study
 hear <- filter(hear, date_hear_loss_any >= date_0)
@@ -98,8 +82,9 @@ hear$hear_loss_time <- as.numeric(difftime(hear$date_hear_aid_any,
                                            hear$date_hear_loss_any, units='days'))/365.25
 hear$grace_period[hear$hear_loss_time <= 1 | hear$hear_aid_any == 0] <- 1
 hear$grace_period[hear$hear_loss_time > 1] <- 0
-# for those with HA beyond the grace period, set HA status to 0
+# for those with HA beyond the grace period, set HA status and HA origin to 0
 hear$hear_aid_any[hear$grace_period == 0] <- 0
+hear$hear_aid_origin[hear$grace_period == 0] <- NA
 
 # just keep non-missing rows and individuals with assessment data <=5 years removed from the date of HL
 hear <- hear %>% drop_na(any_of(c('age_USE', 'sex', 'education_USE', 'deprivation', 
@@ -205,7 +190,7 @@ gp_all <- merge(gp_all, (hear %>% select(id, data_provider_last_gp)),
                 all.x = TRUE)
 
 # import registration periods
-data_period <- readRDS('data_period.Rds') %>%
+data_period <- read.csv('data_period.csv') %>%
   rename(id = eid)
 data_period$from <- as.Date(data_period$from, format = '%Y-%m-%d')
 data_period$to <- as.Date(data_period$to, format = '%Y-%m-%d')
@@ -510,7 +495,7 @@ hear_PP$follow_up <- as.numeric(difftime(hear_PP$censor_date,
                                          hear_PP$date_hear_loss_any, units = 'days'))/365.25
 
 # export
-saveRDS(hear, file = 'hearing_masterfile_ITT.rds')
-saveRDS(hear_PP, file = 'hearing_masterfile_PP.rds')
+saveRDS(hear, file = 'hearing_masterfile_ITT_ALT.rds')
+saveRDS(hear_PP, file = 'hearing_masterfile_PP_ALT.rds')
 
 rm(list = ls()); gc()
