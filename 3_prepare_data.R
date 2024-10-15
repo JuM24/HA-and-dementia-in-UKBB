@@ -493,6 +493,5 @@ hear <- transform(hear, date_cochl_impl_any = pmin(date_cochl_impl_0,
 hear$cochl_impl_any <- 0
 hear$cochl_impl_any[!is.na(hear$date_cochl_impl_any)] <- 1
 
-
 saveRDS(hear, file = 'hearing_masterfile_prepped.rds')
 rm(list = ls()); gc()
