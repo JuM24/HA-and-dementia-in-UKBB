@@ -41,30 +41,39 @@
 #   to matching and effect estimation
 
 ## analysis 12
-  # - replace the variable `dementia` with `flu`
+# - import the dataset cleaned to analyse flu
+# - replace the variable `dementia` with `flu`
 
 ## analysis 13
-  # - replace the variable `dementia` with `hepatic`
+# - import the dataset cleaned to analyse hepatic disorders
+# - replace the variable `dementia` with `hepatic`
 
 ## analysis 14
-  # - replace the variable `dementia` with `respiratory`
+# - import the dataset cleaned to analyse respiratory disorders
+# - replace the variable `dementia` with `respiratory`
 
 ## analysis 15
-  # - replace the variable `dementia` with `asthma`
+# - import the dataset cleaned to analyse asthma
+# - replace the variable `dementia` with `asthma`
 
 ## analysis 16
-  # - replace the variable `dementia` with `skin`
+# - import the dataset cleaned to analyse cutaneous disorders
+# - replace the variable `dementia` with `skin`
 
 ## analysis 17
-  # - replace the variable `dementia` with `infect`
+# - import the dataset cleaned to analyse infectious disorders
+# - replace the variable `dementia` with `infect`
 
 ## analysis 18
+# - import the dataset cleaned to analyse appendicitis
 # - replace the variable `dementia` with `appendicitis`
 
 ## analysis 19
+# - import the dataset cleaned to analyse hip fractures
 # - replace the variable `dementia` with `hip_fract`
 
 ## analysis 20
+# - import the dataset cleaned to analyse transport accidents
 # - replace the variable `dementia` with `trans_acc`
 
 ## SEE BELOW for other sensitivity analyses
@@ -577,3 +586,147 @@ se <- sqrt(cov_robust[2,2])
 critical_value <- qt(0.975, df = df.residual(fit))
 lower_bound <- exp(coef(fit)[2] - critical_value * se)
 upper_bound <- exp(coef(fit)[2] + critical_value * se)
+
+
+
+## GP subset with vanilla adjustment (i.e., no healthcare adjustment)
+file_name <- 'hearing_masterfile_ITT.rds'
+hear <- readRDS(file_name) %>%
+  filter(!is.na(gp_contact_cat))
+set.seed(6)
+m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+                 data = hear,
+                 method = 'quick', distance = 'cbps', estimand = 'ATE',
+                 distance.options = list(seed = 6))
+md <- match.data(m.out)
+dsn = svydesign(ids =~subclass, weights=~weights, data=md)
+fit = svyglm(dementia ~ hear_aid_any * 
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
+             design = dsn, family = quasibinomial())
+marginaleffects::comparisons(fit,
+                             variables = c('hear_aid_any'),
+                             wts = '(weights)',
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
+summary(fit_hr)$coefficients['hear_aid_any', 2]
+broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
+
+
+
+
+
+
+
+
+## Repeat of vanilla- and healthcare-adjusted analyses while retaining pre-baseline HL
+
+# vanilla analysis whole sample
+file_name <- 'hearing_masterfile_ITT_ALT.rds'
+hear <- readRDS(file_name)
+set.seed(6)
+m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+                 data = hear,
+                 method = 'quick', distance = 'bart', estimand = 'ATE',
+                 distance.options = list(seed = 6))
+md <- match.data(m.out)
+dsn = svydesign(ids =~subclass, weights=~weights, data=md)
+fit = svyglm(dementia ~ hear_aid_any * 
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
+             design = dsn, family = quasibinomial())
+marginaleffects::comparisons(fit,
+                             variables = c('hear_aid_any'),
+                             wts = '(weights)',
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
+summary(fit_hr)$coefficients['hear_aid_any', 2]
+broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
+
+# vanilla analysis GP subsample
+file_name <- 'hearing_masterfile_ITT_ALT.rds'
+hear <- readRDS(file_name) %>%
+  filter(!is.na(gp_contact_cat))
+set.seed(6)
+m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple, 
+                 data = hear,
+                 method = 'quick', distance = 'bart', estimand = 'ATE',
+                 distance.options = list(seed = 6))
+md <- match.data(m.out)
+dsn = svydesign(ids =~subclass, weights=~weights, data=md)
+fit = svyglm(dementia ~ hear_aid_any * 
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple),
+             design = dsn, family = quasibinomial())
+marginaleffects::comparisons(fit,
+                             variables = c('hear_aid_any'),
+                             wts = '(weights)',
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
+summary(fit_hr)$coefficients['hear_aid_any', 2]
+broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
+
+# primary healthcare adjustment
+file_name <- 'hearing_masterfile_ITT_ALT.rds'
+hear <- readRDS(file_name) %>%
+  filter(!is.na(gp_contact_cat))
+set.seed(6)
+m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple + 
+                   gp_contact_cat, 
+                 data = hear,
+                 method = 'quick', distance = 'bart', estimand = 'ATE',
+                 distance.options = list(seed = 6))
+md <- match.data(m.out)
+dsn = svydesign(ids =~subclass, weights=~weights, data=md)
+fit = svyglm(dementia ~ hear_aid_any * 
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple + 
+                  gp_contact_cat),
+             design = dsn, family = quasibinomial())
+marginaleffects::comparisons(fit,
+                             variables = c('hear_aid_any'),
+                             wts = '(weights)',
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
+summary(fit_hr)$coefficients['hear_aid_any', 2]
+broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
+
+# primary and secondary healthcare adjustment
+file_name <- 'hearing_masterfile_ITT_ALT.rds'
+hear <- readRDS(file_name) %>%
+  filter(!is.na(gp_contact_cat))
+set.seed(6)
+m.out <- matchit(hear_aid_any ~ age_USE + sex + education_USE + deprivation + g_USE +
+                   srt_min_USE + data_provider_freq + tinnitus_sr_USE + ethnicity_simple + 
+                   gp_contact_cat + inpatient_contact_cat, 
+                 data = hear,
+                 method = 'quick', distance = 'bart', estimand = 'ATE',
+                 distance.options = list(seed = 6))
+md <- match.data(m.out)
+dsn = svydesign(ids =~subclass, weights=~weights, data=md)
+fit = svyglm(dementia ~ hear_aid_any * 
+               (age_USE + education_USE + sex + deprivation + g_USE + srt_min_USE + 
+                  data_provider_freq + tinnitus_sr_USE + ethnicity_simple + 
+                  gp_contact_cat + inpatient_contact_cat),
+             design = dsn, family = quasibinomial())
+marginaleffects::comparisons(fit,
+                             variables = c('hear_aid_any'),
+                             wts = '(weights)',
+                             comparison = 'lnratioavg',
+                             transform = 'exp')
+fit_hr <- survival::coxph(survival::Surv(follow_up, dementia) ~ hear_aid_any, robust = TRUE,
+                          data = md, weights = weights, cluster = subclass)
+summary(fit_hr)$coefficients['hear_aid_any', 2]
+broom::tidy(fit_hr, exponentiate = T, conf.int = T)[1,]
