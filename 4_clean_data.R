@@ -1,10 +1,38 @@
 # This code cleans the data before analysis.
 
+# hearing aid emulation
+library(tidyverse)
+library(MatchIt)
 
+source('0_helper_functions.R')
+
+hear <- readRDS('hearing_masterfile_prepped.rds')
+
+# file with censoring dates
+cens_dates <- readxl::read_excel('censoring_dates.xlsx')
+cens_dates$date <- as.Date(cens_dates$date, format = '%d.%m.%Y')
+
+# we are interested in only those participants that have hearing loss; 
+# thus, we remove participants without it. We do not keep those with congenital hearing loss
+# we also remove those with cochlear implants, as they cannot remove them before the SiN
+hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) & 
+                 is.na(hear_congenital) & cochl_impl_any == 0 | 
+                 (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
 
 
 # remove those with HL before baseline assessment due to strong selection into study
 hear <- filter(hear, date_hear_loss_any >= date_0)
+
+### alternative: do not remove pre-baseline HL; set dates to baseline ####
+#hear$date_hear_loss_any[hear$date_hear_loss_any < hear$date_0 & !is.na(hear$date_hear_loss_any)] <- 
+#  hear$date_0[hear$date_hear_loss_any < hear$date_0 & !is.na(hear$date_hear_loss_any)]
+
+#hear$date_hear_aid_any[hear$date_hear_aid_any < hear$date_0 & !is.na(hear$date_hear_aid_any)] <- 
+#  hear$date_0[hear$date_hear_aid_any < hear$date_0 & !is.na(hear$date_hear_aid_any)]
+
+###                                                                  ####
+
+
 
 # for those that remain, cochlear implant date will become HA date of it's earlier than HA date
 hear$date_hear_aid_any[(hear$date_hear_aid_any > hear$date_cochl_impl_any & 
@@ -495,7 +523,7 @@ hear_PP$follow_up <- as.numeric(difftime(hear_PP$censor_date,
                                          hear_PP$date_hear_loss_any, units = 'days'))/365.25
 
 # export
-saveRDS(hear, file = 'hearing_masterfile_ITT_ALT.rds')
-saveRDS(hear_PP, file = 'hearing_masterfile_PP_ALT.rds')
+saveRDS(hear, file = 'hearing_masterfile_ITT.rds')
+saveRDS(hear_PP, file = 'hearing_masterfile_PP.rds')
 
 rm(list = ls()); gc()
