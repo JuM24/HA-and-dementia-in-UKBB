@@ -1,4 +1,6 @@
-# This code cleans the data before analysis.
+# This code cleans the data before analysis. This variant retains participants with
+# dates of HL pre-baseline, but sets them (and also HA dates, if applicable)
+# to the baseline date
 
 # hearing aid emulation
 library(tidyverse)
@@ -20,8 +22,14 @@ hear <- filter(hear, hear_loss_any == 1 & (congenital == 0 | is.na(congenital)) 
                  (cochl_impl_any == 1 & date_cochl_impl_any > date_hear_loss_any))
 
 
-# remove those with HL before baseline assessment due to strong selection into study
-hear <- filter(hear, date_hear_loss_any >= date_0)
+# do not remove pre-baseline HL
+# set pre-baseline dates to baseline
+hear$date_hear_loss_any[hear$date_hear_loss_any < hear$date_0 & !is.na(hear$date_hear_loss_any)] <- 
+  hear$date_0[hear$date_hear_loss_any < hear$date_0 & !is.na(hear$date_hear_loss_any)]
+
+hear$date_hear_aid_any[hear$date_hear_aid_any < hear$date_0 & !is.na(hear$date_hear_aid_any)] <- 
+  hear$date_0[hear$date_hear_aid_any < hear$date_0 & !is.na(hear$date_hear_aid_any)]
+
 
 
 # for those that remain, cochlear implant date will become HA date of it's earlier than HA date
@@ -243,12 +251,12 @@ data_period$gp_data_duration[data_period$outside_period == 1 &
                                (data_period$gp_start_date >= data_period$from) &
                                (data_period$date_hear_loss_any >= data_period$to)] <- 
   as.numeric(difftime(data_period$to[data_period$outside_period == 1 &
-                            (data_period$gp_start_date >= data_period$from) &
-                            (data_period$date_hear_loss_any >= data_period$to)],
-           data_period$gp_start_date[data_period$outside_period == 1 &
                                        (data_period$gp_start_date >= data_period$from) &
                                        (data_period$date_hear_loss_any >= data_period$to)],
-           units = 'days'))/365.25
+                      data_period$gp_start_date[data_period$outside_period == 1 &
+                                                  (data_period$gp_start_date >= data_period$from) &
+                                                  (data_period$date_hear_loss_any >= data_period$to)],
+                      units = 'days'))/365.25
 # period of registration starts within and ends within the period of interest
 data_period$gp_data_duration[data_period$outside_period == 1 &
                                (data_period$gp_start_date <= data_period$from) &
@@ -264,13 +272,13 @@ data_period$gp_data_duration[data_period$outside_period == 1 &
 data_period$gp_data_duration[data_period$outside_period == 1 &
                                (data_period$gp_start_date <= data_period$from) &
                                (data_period$date_hear_loss_any <= data_period$to)] <- 
-as.numeric(difftime(data_period$date_hear_loss_any[data_period$outside_period == 1 &
-                                          (data_period$gp_start_date <= data_period$from) &
-                                          (data_period$date_hear_loss_any <= data_period$to)],
-         data_period$from[data_period$outside_period == 1 &
-                            (data_period$gp_start_date <= data_period$from) &
-                            (data_period$date_hear_loss_any <= data_period$to)],
-         units = 'days'))/365.25
+  as.numeric(difftime(data_period$date_hear_loss_any[data_period$outside_period == 1 &
+                                                       (data_period$gp_start_date <= data_period$from) &
+                                                       (data_period$date_hear_loss_any <= data_period$to)],
+                      data_period$from[data_period$outside_period == 1 &
+                                         (data_period$gp_start_date <= data_period$from) &
+                                         (data_period$date_hear_loss_any <= data_period$to)],
+                      units = 'days'))/365.25
 
 
 # sum partially overlapping periods
@@ -368,9 +376,9 @@ hear$inpatient_contact_avg <- hear$inpatient_contact/5
 hear$inpatient_contact_cat <- NA
 hear$inpatient_contact_cat[hear$inpatient_contact_avg == 0] <- '1'    # 0
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0 &
-                                       hear$inpatient_contact_avg <= 0.2] <- '2'# 0-0.2
+                             hear$inpatient_contact_avg <= 0.2] <- '2'# 0-0.2
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0.2 &
-                                       hear$inpatient_contact_avg <= 0.5] <- '3'# 0.2-0.5
+                             hear$inpatient_contact_avg <= 0.5] <- '3'# 0.2-0.5
 hear$inpatient_contact_cat[hear$inpatient_contact_avg > 0.5] <- '4'   # >0.5
 hear$inpatient_contact_cat <- as.factor(hear$inpatient_contact_cat)
 
