@@ -1,5 +1,6 @@
 # HA-and-dementia-in-UKBB
-Code to reproduce emulation of target trial for the effect of the use of hearing aids on dementia in people with hearing loss in UKBB.
+Code to reproduce emulation of target trial for the effect of the use of hearing aids on dementia in people with hearing loss in UKBB:  
+[![DOI](https://img.shields.io/badge/DOI-10.1093/aje/kwae452-blue)](https://doi.org/10.1093/aje/kwae452).
 
 ## Required files
 The below table lists the UK Biobank field IDs that are required for the analyses.
