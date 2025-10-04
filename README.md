@@ -1,7 +1,8 @@
 # HA-and-dementia-in-UKBB
 Code to reproduce emulation of target trial for the effect of the use of hearing aids on dementia in people with hearing loss in UKBB: [![DOI](https://img.shields.io/badge/DOI-10.1093/aje/kwae452-blue)](https://doi.org/10.1093/aje/kwae452).
 
-WARNING: the file "3_prepare_data.R" - including its entire commit history - was accidentally deleted on the 1st of October 2025. I am working on re-writing the code to upload again. If in the meantime you need the code to replicate the pipeline, contact me (jure.mur@uni.lu) for support. Sorry about this.
+WARNING: the file "3_prepare_data.R" - including its entire commit history - was accidentally deleted on the 1st of October 2025.  I then re-wrote the code and uploaded it again. It probably differs from the original file used to run the data-cleaning pipeline. 
+I will run further tests to ensure it's as close as possible to the original and may update it further in the future. Sorry about this.
 
 
 ## Required files
